@@ -1,0 +1,219 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls,GlEngine;
+type
+  TForm1 = class(TForm)
+    Timer1: TTimer;
+    Panel1: TPanel;
+    procedure Timer1Timer(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormClick(Sender: TObject);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+
+  private
+   bitmap32: TBitMap;
+    { Private declarations }
+  public
+   Procedure Render;
+    { Public declarations }
+  end;
+
+  TSPoint=record
+   x,y:single;
+  end;
+
+  TPart=Class(tobject)
+   pos:TSpoint;
+   VecMove:TSpoint;
+   color:TGLColor;
+
+   sizep:single;
+   ds,smax,smin:single;
+   constructor Create;
+   Procedure Move;
+   procedure Draw;
+   destructor Free;
+  end;
+
+
+var
+  Form1: TForm1;
+  zbf:TBlendFunction;
+  DC:HDC;
+  omx,omy:integer;
+
+  gle:TGLEngine;
+  im,ToBmp:Cardinal;
+  Parts:TList;
+  w:integer;
+  h:integer;
+
+  dmx,dmy:single;
+  OldMouseX, OldMouseY:integer;
+implementation
+
+{$R *.dfm}
+
+{ TForm1 }
+
+procedure TForm1.Render;
+var
+ zsize:TSize; zpoint:TPoint;
+ TopLeft: TPoint;
+ i:integer;
+ o:TPart;
+begin
+ gle.BeginRenderToTex(ToBmp,w,h);
+ gle.Clear;
+ i:=0 ;
+ while(i<Parts.Count) do
+  begin
+   o:= TPart(Parts[i]);
+   o.Move;
+   o.Draw;
+   i:=i+1;
+  end;
+ gle.EndRenderToTex;
+ gle.GetBMP32FromImage(ToBmp,bitmap32);
+ zsize.cx := bitmap32.Width;
+ zsize.cy := bitmap32.Height;
+ zpoint := Point(0,0);
+ TopLeft:=BoundsRect.TopLeft;
+ if (mouse.CursorPos.X=0)and(mouse.CursorPos.y=0) then
+  application.Terminate;
+ UpdateLayeredWindow(Handle,DC,@TopLeft,@zsize,bitmap32.Canvas.Handle,@zpoint,0,@zbf, ULW_ALPHA);
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+var
+ o:TPart ;
+ i:integer;
+begin
+for i:=1 to 5 do
+begin
+ o:=TPart.Create;
+ Parts.Add(o);
+end;
+ Render;
+ OldMouseX:=mouse.CursorPos.x;
+ OldMouseY:=mouse.CursorPos.y;
+ application.ProcessMessages;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+ bitmap32.Free;
+ ReleaseDC(self.Handle, DC);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+ w:=screen.Width;
+ h:=screen.Height div 2;
+ randomize;
+ GLE:=TGLEngine.Create;
+ GLE.VisualInit(GetDC(Panel1.Handle),w,h,0);
+ GLE.LoadImage(ExtractFilePath(application.ExeName)+'снеж.png',im,false);
+ ToBmp:=gle.CreateImage(w,h);
+ Parts:=TList.Create;
+ gle.SwichBlendMode(bmAdd);
+
+ with zbf do begin
+   BlendOp := AC_SRC_OVER;
+   BlendFlags := 0;
+   AlphaFormat := AC_SRC_ALPHA;
+   SourceConstantAlpha := 255;
+  end;
+
+  bitmap32:=TBitMap.Create;
+  bitmap32.PixelFormat:=pf32bit;
+
+ timer1.Enabled:=true;
+ randomize;
+ self.Top:=0;
+  self.Left:=0;
+// DC:= GetDC(0);
+ SetWindowLong(Handle,GWL_EXSTYLE, GetWindowLong(Handle,GWL_EXSTYLE) or WS_EX_LAYERED);
+end;
+
+procedure TForm1.FormClick(Sender: TObject);
+begin
+// timer1.Enabled:=false;
+// timer1.Free;
+// close
+end;
+
+{ TPart }
+
+constructor TPart.Create;
+begin
+ pos.x:=random(w);
+ pos.y:=0;
+ VecMove.x:=(0.5-random)*5;
+ VecMove.y:=1+(random/2)*3;
+ color:=gle.ColorGL(1,1,1,1);
+ smin:= 2+random(5);
+ smax:= 10+ 10*random;
+ ds:=4-random*2;
+ sizep:=(smin+smax)/2;
+end;
+
+procedure TPart.Draw;
+begin
+ sizep:=sizep+ds;
+ if (sizep>smax) or (sizep<smin) then ds:=-ds;
+ gle.SetColor(Color);
+ gle.DrawImage(pos.x,pos.y,smax,smax,0,true,false,im);
+end;
+
+destructor TPart.Free;
+begin
+end;
+
+procedure TPart.Move;
+begin
+ dmx:=OldMouseX-mouse.CursorPos.X;
+ dmy:=OldMouseY-mouse.CursorPos.Y;
+
+ VecMove.x:=VecMove.x-dmx/((pos.x-mouse.CursorPos.X)*(pos.y-mouse.CursorPos.Y)/10);
+ VecMove.y:=VecMove.y+ABS(dmy/((pos.x-mouse.CursorPos.X)*(pos.y-mouse.CursorPos.Y)/10));
+
+//VecMove.x:=VecMove.x+dmx/((pos.x-mouse.CursorPos.X));
+// VecMove.y:=VecMove.y+dmy/((pos.y-mouse.CursorPos.Y));
+
+ pos.x:=pos.x+VecMove.x;
+ pos.y:=pos.y+VecMove.y;
+
+ If (Abs(VecMove.x)>5) then
+  VecMove.x:=VecMove.x/2;
+
+ If (Abs(VecMove.y)>5) then
+  VecMove.y:=VecMove.y/2;
+
+ color.alpha:=color.alpha-VecMove.y/500;
+// if (pos.x<=smax)or(pos.x>=w-smax) then VecMove.x:=-VecMove.x;
+// if (pos.y<=smax)or(pos.y>=h-smax) then VecMove.y:=-VecMove.y;
+// if (pos.x<=smax)or(pos.x>=w-smax) then pos.x:=random(w);
+// if (pos.y>=h-smax) then pos.y:=0;
+ if  color.alpha<=0 then
+ begin
+  Parts.Remove(self);
+  free;
+ end
+
+end;
+
+procedure TForm1.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+ omx:= X;
+ omy:= Y;
+end;
+
+end.

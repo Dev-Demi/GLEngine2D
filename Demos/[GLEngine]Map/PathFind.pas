@@ -1,0 +1,322 @@
+unit PathFind;
+
+interface
+
+uses
+  Windows, Classes;
+
+type
+  TPath = array of TPoint;  // Тип для хранения и передачи найденного пути.
+
+  TPathMapCell = record   // Клетка карты пути в которой мы отмечаем:
+    Distance : Integer;   // - порядковый номер клетки в маршруте и
+    Direction : Integer;  // - направление, с которого приехали на эту клетку.
+  end;
+
+  TPathMap = array of array of TPathMapCell;  // Карта пути.
+
+  {Процедурный тип для передачи в модуль адреса функции, которая возвращает
+   стоимость движения на клетку (X,Y) с направления Direction.
+   Если (X,Y) -- препятствие, то функция должна вернуть -1.
+   Сама функция определяется в основной программе. Для работы алгоритма
+   знание реализации функции не обязательно.}
+  TGetCostFunc = Function(X,Y,Direction : Integer) : Integer;
+
+{Функция возвращает карту путей для всех клеток основной карты.
+ Удобна, если мы рассматриваем различные пути из одной и той же
+ начальной точки в различные конечные точки.}
+function MakePathMap(
+  MapWidth,MapHeight : Integer;
+  StartX,StartY : Integer;
+  GetCostFunc : TGetCostFunc) : TPathMap;
+
+{Функция возвращает путь в конечную точку, заданную координатами (X,Y)
+ по полученной от предыдущей функции карте пути.}
+function FindPathOnMap(PathMap : TPathMap; X,Y : Integer) : TPath;
+
+{Функция ищет путь из точки (StartX,StartY) в точку (StopX,StopY).}
+function FindPath(
+  MapWidth,MapHeight : Integer;
+  StartX,StartY,StopX,StopY : Integer;
+  GetCostFunc : TGetCostFunc) : TPath;
+
+implementation
+
+type
+  TWaveCell = record      // Одна ячейка фронта волны. Содержит:
+    X,Y : Integer;        // - координаты точки, в которую мы движемся;
+    Cost : Integer;       // - оставток времени на движение до точки;
+    Direction : Integer;  // - напрвление, по которому мы движемся.
+  end;
+
+  TWave = class
+  private
+    FData : array of TWaveCell;
+    FPos : Integer;                // Текущая позиция в массиве.
+    FCount : Integer;              // Количество реальных элементов в массиве.
+                                   // Размеры динамического массива при изменении
+                                   // количества элементов не меняются. Массив
+                                   // только растет.
+    FMinCost : Integer;
+    function GetItem : TWaveCell;
+  public
+    property Item : TWaveCell read GetItem;    // Текущий элемент массива.
+    property MinCost : Integer read FMinCost;  // Минимальное значения Cost
+                                               // среди всех элементов массива.
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(NewX,NewY,NewCost,NewDirection : Integer); // Добавляет новый
+                                                             // элемент в массив.
+    procedure Clear;  // Очищает массив. На самом деле всего лишь меняет
+                      // значение поля FCount. Динамический массив не
+                      // освобождается и его значения не изменяются.
+    function Start : Boolean;  // Начало сканирования массива. Делает текущим
+                               // первый элемент массива. Возвращает false,
+                               // если массив пуст.
+    function Next : Boolean;   // Делает текущим следующий элемент массива.
+                               // Возвращает false, если следующего элемента нет.
+  end;
+
+var
+  GetCostFunc : TGetCostFunc;  // Переменная для хранения функции определения
+                               // стоимости движения, переданной из основной
+                               // программы.
+  MapWidth : Integer;          // Ширина карты.
+  MapHeight : Integer;         // Высота карты.
+
+constructor TWave.Create;
+begin
+  Clear;  // Инициализируем значения полей.
+end;
+
+destructor TWave.Destroy;
+begin
+  FData:=NIL;  // Освобождаем память, занимаемую массивом.
+  inherited Destroy;
+end;
+
+function TWave.GetItem : TWaveCell;
+begin
+  Result:=FData[FPos];  // Возвращаем текущий элемент массива.
+end;
+
+procedure TWave.Add(NewX,NewY,NewCost,NewDirection : Integer);
+begin
+  if FCount >= Length(FData)            // Если не хватает места в массиве,
+  then                                  // то
+    SetLength(FData,Length(FData)+30);  // увеличиваем его размер. Число 30
+                                        // взято от фонаря.
+  with FData[FCount] do
+    begin
+    X:=NewX;
+    Y:=NewY;
+    Cost:=NewCost;
+    Direction:=NewDirection;
+    end;
+  if NewCost < FMinCost  // Проверяем значение NewCost на минимальность.
+  then
+    FMinCost:=NewCost;
+  Inc(FCount);           // Увеличиваем счетчик количества элементов.
+end;
+
+procedure TWave.Clear;   // Сбрасываем в исходное состояние все поля.
+begin
+  FPos:=0;
+  FCount:=0;
+  FMinCost:=High(Integer);
+end;
+
+function TWave.Start : Boolean;
+begin
+  FPos:=0;               // Устанавливаем указатель текущей записи на начало
+  Result:=(FCount > 0);  // массива. Возвращаем false, если массив пуст.
+end;
+
+function TWave.Next : Boolean;
+begin
+  Inc(FPos);                // Увеличиваем указатель текущей записи. Возвращаем
+  Result:=(FPos < FCount);  // false, если больше нет элементов.
+end;
+
+{Локальная функция определения стоимости передвижения. В алгоритме первой
+ вызывается именно она. Сначала приводим значение Direction к диапазону 0..7,
+ а потом проверяем выход за пределы карты. Если выходит, то сами возвращаем
+ -1 (код препятствия), а не передаем во внешнюю функцию.
+ Типичный FoolProof: вдруг разработчик основоного модуля не предусмотрел
+ проверку на выход за пределы карты.
+ Заведомо корректное значение параметров передаем во внешнюю функцию и
+ возвращаем результат ее работы.}
+function GetCost(X,Y,Direction : Integer) : Integer;
+begin
+  Direction:=(Direction AND 7);
+  if (X < 0) OR (X >= MapWidth) OR (Y < 0) OR (Y >= MapHeight)
+  then
+    Result:=-1
+  else
+    Result:=GetCostFunc(X,Y,Direction);
+end;
+
+{Функция пепеходник: переводит направление в приращение координаты X.}
+function DirToDX(Direction : Integer) : Integer;
+begin
+  case Direction of
+    0,4  : Result:=0;
+    1..3 : Result:=1;
+  else
+    Result:=-1;
+  end;
+end;
+
+{Функция пепеходник: переводит направление в приращение координаты Y.}
+function DirToDY(Direction : Integer) : Integer;
+begin
+  case Direction of
+    2,6  : Result:=0;
+    3..5 : Result:=1;
+  else
+    Result:=-1;
+  end;
+end;
+
+{Основная рабочая лошадка -- ялро алгоритма. Возвращает карту пути,
+ рассчитанную от начальной до конечной точки.
+ Для упрощения понимания часть кода организовна во внутренние процедуры.}
+function FillPathMap(X1,Y1,X2,Y2 : Integer) : TPathMap;
+var
+  OldWave, NewWave : TWave;
+  Finished : Boolean;
+  I : TWaveCell;
+
+  procedure PreparePathMap;  // Создает динамический массив под результат и
+  var                        // запоняет для каждой клатки поле Distance
+    X,Y : Integer;           // (номер клетки в маршруте) значениями -1,
+  begin                      // означающими, что поэтой клетке еще не проезжали.
+    SetLength(Result,MapHeight,MapWidth);
+    for Y:=0 to (MapHeight-1) do
+      for X:=0 to (MapWidth-1) do
+        Result[Y,X].Distance:=-1;
+  end;
+
+  procedure TestNeighbours;  //проверяем восемь клеток, соседних с клеткой,
+  var                        // на которую указывает текущий элемент волны.
+    X,Y,C,D : Integer;
+  begin
+    for D:=0 to 7 do
+      begin
+      X:=OldWave.Item.X+DirToDX(D);
+      Y:=OldWave.Item.Y+DirToDY(D);
+      C:=GetCost(X,Y,D);
+      if (C >= 0) AND (Result[Y,X].Distance < 0) // Если не препятствие и там не
+      then                                       // проезжали, то
+        NewWave.Add(X,Y,C,D);                    // начинаем движение туда.
+      end;
+  end;
+
+  procedure ExchangeWaves; // Меняем значения старой и нновой волны
+  var
+    W : TWave;
+  begin
+    W:=OldWave;
+    OldWave:=NewWave;
+    NewWave:=W;
+    NewWave.Clear;
+  end;
+
+begin
+  PreparePathMap;             // Создаем массив результатов и заполняем его
+                              // начальными значениями.
+  OldWave:=TWave.Create;
+  NewWave:=TWave.Create;
+  Result[Y1,X1].Distance:=0;  // Отмечаем, что прошли начальную точку.
+  OldWave.Add(X1,Y1,0,0);     // Создаем волну из одной начальной точки
+  TestNeighbours;             // Так как единственный элемент в OldWave имеет
+                              // значение Cost = 0, то TestNeighbours создаст в
+                              // NewWave следующую фазу волны по всем возможным
+                              // направлениям от начальной точки.
+  Finished:=((X1 = X2) AND (Y1 = Y2));  // Проверка на совпадение начальной и
+                                        // конечной точек.
+  while NOT Finished do        // Цикл, пока не найдена конечная точка.
+    begin
+    ExchangeWaves;             // Загоняем новую фазу волны в OldWave и
+                               // освобождаем NewWave для загрузки следующей
+                               // фазы.
+    if NOT OldWave.Start then Break;  // Позиционируем OldWave еа еачало. Если
+                                      // значений нет, то волна умерла. Выход.
+      repeat                          // Путь не найден.
+        I:=OldWave.Item;                 // Берем текущий элемент волны.
+        I.Cost:=I.Cost-OldWave.MinCost;  // Вычитая из Cost минимальное значение
+                                         // для всей OldWave получаем элементы,
+                                         // которые добрались до цели (Cost=0).
+        if I.Cost > 0                             // Тех, кто не добрался,
+        then                                      // записываем в NewWave с
+          NewWave.Add(I.X,I.Y,I.Cost,I.Direction) // остатком Cost.
+        else
+          begin
+          // Если по клетке уже проехали, то выбрасываем.
+          if Result[I.Y,I.X].Distance >= 0 then Continue;
+          // Если по клетке не проехали, то записываем в Distance номер клетки
+          // на маршруте. Номер вычисляется как номер предыдущей клетки
+          // маршрута +1.
+          Result[I.Y,I.X].Distance:=Result[I.Y-DirToDY(I.Direction),I.X-DirToDX(I.Direction)].Distance+1;
+          // Сохраняем направление, по которому мы сюда приехали.
+          Result[I.Y,I.X].Direction:=I.Direction;
+          // Проверка на достижение конечной точки.
+          Finished:=((I.X = X2) AND (I.Y = Y2));
+          if Finished then Break;
+          // Из достигнутой клетки пускаем новую волну во всех возможных
+          // направлениях. Сохраняем в NewWave.
+          TestNeighbours;
+          end;
+      until NOT OldWave.Next;  // Продолжаем цикл, пока не переберем
+    end;                       // все элементы из OldWave;
+  NewWave.Free;
+  OldWave.Free;
+end;
+
+function MakePathMap(
+  MapWidth,MapHeight : Integer;
+  StartX,StartY : Integer;
+  GetCostFunc : TGetCostFunc) : TPathMap;
+begin
+  PathFind.MapWidth:=MapWidth;       // Сохраняем необхдимые значения параметров
+  PathFind.MapHeight:=MapHeight;     // в локальных переменных, для использования
+  PathFind.GetCostFunc:=GetCostFunc; // другими процедурами модуля.
+  // Заполняем крату пути, Так как конечная точка недостижима, то выход
+  // произойдет только после того, как мы пройдем все возможные клетки.
+  // Соответственно, на выходе мы получим полную карту пути.
+  Result:=FillPathMap(StartX,StartY,-1,-1);
+end;
+
+function FindPathOnMap(PathMap : TPathMap; X,Y : Integer) : TPath;
+var
+  Direction : Integer;
+begin
+  Result:=NIL;
+  if PathMap[Y,X].Distance < 0 then Exit;
+  SetLength(Result,PathMap[Y,X].Distance+1); // Создали массив для результата.
+  // Пробегаем по карте пути в обратную сторону из заданной точки и
+  // сохраняем координаты клеток в результрующем массиве.
+  while PathMap[Y,X].Distance > 0 do
+    begin
+    Result[PathMap[Y,X].Distance]:=Point(X,Y);
+    Direction:=PathMap[Y,X].Direction;
+    X:=X-DirToDX(Direction);
+    Y:=Y-DirToDY(Direction);
+    end;
+  Result[0]:=Point(X,Y);  //Дополняем результат кначальной точкой маршрута.
+end;
+
+function FindPath(
+  MapWidth,MapHeight : Integer;
+  StartX,StartY,StopX,StopY : Integer;
+  GetCostFunc : TGetCostFunc) : TPath;
+begin
+  PathFind.MapWidth:=MapWidth;       // Сохраняем необхдимые значения параметров
+  PathFind.MapHeight:=MapHeight;     // в локальных переменных, для использования
+  PathFind.GetCostFunc:=GetCostFunc; // другими процедурами модуля.
+  // Создаем карту пути до конечной точки и тут же ищем по ней путь.
+  // Комбинация двух предыдущих функций.
+  Result:=FindPathOnMap(FillPathMap(StartX,StartY,StopX,StopY),StopX,StopY);
+end;
+
+end.

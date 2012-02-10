@@ -1,0 +1,17 @@
+
+varying vec2 vTexCoord;
+varying vec4 MyCol;
+
+void main(void)
+{
+
+   // Clean up inaccuracies
+   vec2 Position;
+   Position.xy = sign(gl_Vertex.xy);
+   MyCol = vec4(gl_Color);
+   gl_Position = ftransform();
+  // gl_Position = vec4(Position.xy, 0.0, 1.0); на весь экран
+   vTexCoord = Position.xy;
+
+   
+}
