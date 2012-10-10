@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 382
   Top = 219
-  Width = 568
+  Width = 985
   Height = 613
   Caption = #1055#1086#1089#1083#1077#1076#1085#1103#1103' '#1073#1080#1090#1074#1072
   Color = clBackground
@@ -19,7 +19,7 @@ object Form1: TForm1
   object Image1: TImage
     Left = 0
     Top = 0
-    Width = 552
+    Width = 969
     Height = 544
     Align = alClient
     Center = True
@@ -12933,13 +12933,13 @@ object Form1: TForm1
   object sPanel1: TsPanel
     Left = 0
     Top = 544
-    Width = 552
+    Width = 969
     Height = 31
     Align = alBottom
     TabOrder = 0
     SkinData.SkinSection = 'PANEL'
     DesignSize = (
-      552
+      969
       31)
     object sLabelFX1: TsLabelFX
       Left = 8
@@ -12978,7 +12978,7 @@ object Form1: TForm1
       SkinData.SkinSection = 'BUTTON'
     end
     object sButton2: TsButton
-      Left = 475
+      Left = 892
       Top = 3
       Width = 75
       Height = 25
@@ -13060,7 +13060,7 @@ object Form1: TForm1
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 552
+    Width = 969
     Height = 544
     Align = alClient
     TabOrder = 1

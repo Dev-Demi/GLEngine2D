@@ -19,6 +19,9 @@ Type
   case BLEND_ADDMUL: glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
   case BLEND_ADDALPHA: glBlendFunc(GL_SRC_ALPHA, GL_ONE); break;
 }
+ TGLPoint = record
+  x,y:single;
+  end;
 
  TGLColor = record
    Red, Green, Blue, alpha:single;
@@ -141,6 +144,7 @@ Type
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
+     Procedure Polygon(x,y,angle:single; n: array of TGLPoint);
 
   {+}Procedure SetTextStyle(NameFont:string; size:integer);
   {+}Procedure TextOut(x,y:single; text:string; angle:single=0);
@@ -178,10 +182,10 @@ Type
   {+}Procedure BeginRenderToTex(Image:Cardinal; w,h:glint);
   {+}Procedure EndRenderToTex;
 
-  Function ShaderCreate(FragmentShaderFileName,VertexShaderFileName:String):Integer;
+  {+}Function ShaderCreate(FragmentShaderFileName,VertexShaderFileName:String):Integer;
 
-  Procedure ShaderStart(Shader:Integer);
-  Procedure ShaderStop(Shader:Integer);
+  {+}Procedure ShaderStart(Shader:Integer);
+  {+}Procedure ShaderStop(Shader:Integer);
   Function  ShaderGetUniform(Shader:Integer;uniform: PChar):GLuint;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Integer); Overload;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Single); Overload;
@@ -234,7 +238,7 @@ begin
   }  
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); { only first two can be used }
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); { all of the above can be used }
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); { all of the above can be used }
 
   if Format = GL_RGBA then
     gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, Width, Height, GL_RGBA, GL_UNSIGNED_BYTE, pData)
@@ -2004,6 +2008,21 @@ begin
 end;
 
 
+
+procedure TGLEngine.Polygon(x,y,angle:single; n: array of TGLPoint);
+var
+ i:integer;
+begin
+glPushMatrix();
+ glTranslated(x,y,0);
+ glRotatef(AngleRotate, 0,0,1);
+  glBegin(GL_POLYGON);
+  For i:=0 to High(n)  do
+   glVertex3d(n[i].x,n[i].y,0);
+  glEnd();
+glPopMatrix();
+
+end;
 
 { TVBOPrimitive }
 

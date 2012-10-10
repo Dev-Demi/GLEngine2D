@@ -45,7 +45,7 @@ type
  TTypeArmor =  (aSoldir,aSniper,aMedik);
  TTypeMonstr = (mZombi,mEgg,mQueen,mGrom);
  TTypeWeapon = (wPistol);
- TTypeBullet = (bBullet,bRocket,bFire);
+ TTypeBullet = (bBullet,bRocket,bFire,bBoomBullet);
 
 // TTerrainTypes = (ttNormal,ttSand,ttForest,ttRoad,ttObstacle);
 
@@ -83,6 +83,14 @@ type
 
  TFire = class(TWeapon)
    Procedure Add(ParentArmor:TArmor;x,y,dx,dy:single); Override;
+   procedure move;  Override;
+   Procedure draw;  Override;
+ //  Procedure kill; Override;
+  end;
+
+ TBoomBullet = class(TWeapon)
+   size: single;
+   Procedure Add(ParentArmor:TArmor;x,y,dx,dy,size:single);
    procedure move;  Override;
    Procedure draw;  Override;
  //  Procedure kill; Override;
@@ -285,6 +293,7 @@ procedure TForm1.Timer1Timer(Sender: TObject);
     Queen:TQueen;
     Grom:TGrom;
     Bu:TBullet;
+    Bbu:TBoomBullet;
     fire:TFire;
 begin
 { TODO : Главный цикл }
@@ -315,6 +324,13 @@ begin
           fire:=TFire(Bullets.Items[i]);
           fire.draw;
           fire.move;
+        end;
+  bBoomBullet:
+        begin
+          //Bbu:TBoomBullet;
+          Bbu:=TBoomBullet(Bullets.Items[i]);
+          Bbu.draw;
+          Bbu.move;
         end;
  end ;
  i:=i+1;
@@ -685,7 +701,7 @@ for i:=0 to round(karmor*0.2) do
   m.Add(Zombi);
  end;  }
 
-for i:=0 to round(karmor*0.5) do
+for i:=0 to round(kzombi*0.5) do
  begin
   Queen:=TQueen.Create;
   Queen.Life;
@@ -712,6 +728,7 @@ procedure TArmor.Attak;
 var
  bu:Tbullet;
  fire:Tfire;
+ bbu:TBoomBullet;
 begin
  case Weapon of
   bBullet:  begin
@@ -723,6 +740,11 @@ begin
              Fire:=Tfire.Create;
              Fire.Add(self,x,y,target.x-x,target.y-y);
              bullets.add(Fire);
+            end;
+  bBoomBullet : begin
+             bbu:=TBoomBullet.Create;
+             bbu.Add(self,x,y,target.x-x,target.y-y,170);
+             bullets.add(bbu);
             end;
   end;
 end;
@@ -1056,6 +1078,9 @@ begin
    weapon:=bBullet
  else
    weapon:=bFire;
+
+ if random>0.9then
+  weapon:=bBoomBullet;
 
   sdvig:=random(7)+3;
   delta:=1;
@@ -1748,6 +1773,102 @@ procedure TWeapon.kill;
 begin
  Bullets.Remove(self);
  free
+end;
+
+{ TBoomBullet }
+
+procedure TBoomBullet.Add(ParentArmor: TArmor; x, y, dx, dy,size: single);
+begin
+ Self.Parent:= ParentArmor;
+ self.size := size;
+ self.x:=x;
+ self.y:=y;
+ self.dx:=dx;
+ self.dy:=dy;
+ self.speed:=5;
+ normalvector(self.dx,self.dy,self.speed);
+ self.MaxDistance:=70;
+ self.damage:=30;
+ self.distance:=0;
+ self.TypeBullet:= bBoomBullet;
+end;
+
+procedure TBoomBullet.draw;
+begin
+ gle.SwichBlendMode(bmAdd);
+ gle.SetColor(0,1,0,0.8);
+// gle.Ellipse(x,y,size/10,size/10,1,0,5);
+ gle.DrawImage(x,y,size/5,size/5,0,true,false,ImFire);
+ gle.SwichBlendMode(bmNormal);
+end;
+
+procedure TBoomBullet.move;
+ var
+ i:integer;
+ zombi:TMonstr;
+ bbu:TBoomBullet;
+begin
+ x:=x+dx;
+ y:=y+dy;
+ distance:=distance+Round(sqrt(dx*dx+dy*dy));
+
+ size:=size-1;
+
+ if size < 3 then
+ begin
+  kill;
+  exit;
+ end;
+
+ i:=0;
+ While i<m.Count do
+ begin
+  Zombi:=TMonstr(m.Items[i]);
+  if Zombi<>nil then
+  if SQRT(sqr(Zombi.x-x)+sqr(Zombi.y-y))<10+Zombi.healt/10 then
+  begin
+   Zombi.healt:=Zombi.healt-Round(damage*size/100);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   if Zombi.healt<=0 then
+   begin
+    Zombi.Deat;
+    Zombi:=nil;
+    Parent.Rang:=Parent.Rang+0.1;
+
+
+   end;
+
+   kill;
+   exit;
+
+ //  Add(parent,x,y,-0.01,0 );
+  //  Add(parent,x,y,0, 0.01 );
+  //  Add(parent,x,y,0,-0.01 );
+
+  end;
+  i:=i+1;
+ end;
+
+ if (distance>=MaxDistance)or (x<0) or (x>=form1.Panel1.ClientWidth) or (y<0) or (y>=form1.Panel1.ClientHeight) then
+  kill;
+
+
 end;
 
 end.

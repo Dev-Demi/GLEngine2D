@@ -45,7 +45,7 @@ type
  TTypeArmor =  (aSoldir,aSniper,aMedik);
  TTypeMonstr = (mZombi,mEgg,mQueen,mGrom);
  TTypeWeapon = (wPistol);
- TTypeBullet = (bBullet,bRocket,bFire);
+ TTypeBullet = (bBullet,bRocket,bFire,bBoomBullet);
 
 // TTerrainTypes = (ttNormal,ttSand,ttForest,ttRoad,ttObstacle);
 
@@ -83,6 +83,14 @@ type
 
  TFire = class(TWeapon)
    Procedure Add(ParentArmor:TArmor;x,y,dx,dy:single); Override;
+   procedure move;  Override;
+   Procedure draw;  Override;
+ //  Procedure kill; Override;
+  end;
+
+ TBoomBullet = class(TWeapon)
+   size: single;
+   Procedure Add(ParentArmor:TArmor;x,y,dx,dy,size:single);
    procedure move;  Override;
    Procedure draw;  Override;
  //  Procedure kill; Override;
@@ -285,19 +293,20 @@ procedure TForm1.Timer1Timer(Sender: TObject);
     Queen:TQueen;
     Grom:TGrom;
     Bu:TBullet;
+    Bbu:TBoomBullet;
     fire:TFire;
 begin
 { TODO : Главный цикл }
 
 //for i:=0 to a.Count-1 do
 
-GLE.BeginRender;
+GLE.BeginRender(true);
 GLE.AntiAlias(true);
 gle.SetColor(1,1,1,1);
 
 
 gle.SetColor(1,1,1,1);
- Gle.DrawImage(0,0,panel1.ClientWidth,Panel1.ClientHeight,0,false,Im);
+ Gle.DrawImage(0,0,panel1.ClientWidth,Panel1.ClientHeight,0,false,false,Im);
 
 i:=0;
 try
@@ -315,6 +324,13 @@ begin
           fire:=TFire(Bullets.Items[i]);
           fire.draw;
           fire.move;
+        end;
+  bBoomBullet:
+        begin
+          //Bbu:TBoomBullet;
+          Bbu:=TBoomBullet(Bullets.Items[i]);
+          Bbu.draw;
+          Bbu.move;
         end;
  end ;
  i:=i+1;
@@ -505,7 +521,7 @@ begin
 //  gle.SetColor(1,1,1,0.005);
 //  gle.DrawImage(0,0,form1.Panel1.ClientWidth,form1.Panel1.ClientHeight,0,false,imb);
   gle.SetColor(1,0,0,0.8);
-  gle.DrawImage(x,y,40+random(20),40+random(20),Random(360),true,ImBlood);
+  gle.DrawImage(x,y,40+random(20),40+random(20),Random(360),true,false,ImBlood);
  gle.EndRenderToTex;
 
  Free;
@@ -522,7 +538,7 @@ begin
  If target<>nil then
   angle:=CalcAngle(target.x-x,Target.y-y);
 
- GLe.DrawImage(x,y,10+healt/20,10+healt/20,angle,true,ImZombi);
+ GLe.DrawImage(x,y,10+healt/20,10+healt/20,angle,true,false,ImZombi);
  if Form1.ShowCaption.Checked then
 begin
  Gle.SetColor(1,1,1,0.5);
@@ -614,7 +630,7 @@ begin
  //gle.DrawImage(0,0,1024,601,0,false,Imb);
 // gle.SetColor(random,random,random,0.3);
    gle.SetColor(1,1,1,0.9);
-   Gle.DrawImage(0,0,panel1.ClientWidth,Panel1.ClientHeight,0,false,Imb);
+   Gle.DrawImage(0,0,panel1.ClientWidth,Panel1.ClientHeight,0,false,false,Imb);
   gle.EndRenderToTex;
 end;
 
@@ -685,7 +701,7 @@ for i:=0 to round(karmor*0.2) do
   m.Add(Zombi);
  end;  }
 
-for i:=0 to round(karmor*0.5) do
+for i:=0 to round(kzombi*0.5) do
  begin
   Queen:=TQueen.Create;
   Queen.Life;
@@ -712,6 +728,7 @@ procedure TArmor.Attak;
 var
  bu:Tbullet;
  fire:Tfire;
+ bbu:TBoomBullet;
 begin
  case Weapon of
   bBullet:  begin
@@ -723,6 +740,11 @@ begin
              Fire:=Tfire.Create;
              Fire.Add(self,x,y,target.x-x,target.y-y);
              bullets.add(Fire);
+            end;
+  bBoomBullet : begin
+             bbu:=TBoomBullet.Create;
+             bbu.Add(self,x,y,target.x-x,target.y-y,170);
+             bullets.add(bbu);
             end;
   end;
 end;
@@ -777,7 +799,7 @@ begin
  If target<>nil then
   angle:=CalcAngle(target.x-x,Target.y-y);
 
- GLe.DrawImage(x,y,23,29,angle,true,ImTank);
+ GLe.DrawImage(x,y,23,29,angle,true,false,ImTank);
 
 
 if Form1.ShowCaption.Checked then
@@ -1057,6 +1079,9 @@ begin
  else
    weapon:=bFire;
 
+ if random>0.9then
+  weapon:=bBoomBullet;
+
   sdvig:=random(7)+3;
   delta:=1;
   if  random>=0.5 then
@@ -1144,7 +1169,7 @@ begin
 
  gle.SetColor(color);
  gle.SwichBlendMode(bmAdd);
- gle.DrawImage(xn,yn,64,64,0,true,ImboomParts[step]);
+ gle.DrawImage(xn,yn,64,64,0,true,false,ImboomParts[step]);
 // gle.DrawAniFrame(xn,yn,Angle,aminBoom);
  gle.SwichBlendMode(bmNormal);
  step:=step+1;
@@ -1178,7 +1203,7 @@ begin
  GLE.SetColor(1,0,0,1);
  GLE.Line(x-3,y,x+3,y);
  GLE.Line(x,y-3,x,y+3) ;   }
- GLe.DrawImage(x,y,20,20,0,true,ImMedik);
+ GLe.DrawImage(x,y,20,20,0,true,false,ImMedik);
 if Form1.ShowCaption.Checked then
 begin
  Gle.SetColor(1,1,1,0.5);
@@ -1197,7 +1222,7 @@ if TargetAr<>nil then
     GLE.Line(x,y,TargetAr.x,TargetAr.y);
 
     GLE.SetColor(1,1,1,0.1);
-    GLE.Ellipse(TargetAr.x,TargetAr.y,7,7,0,20);
+    GLE.Ellipse(TargetAr.x,TargetAr.y,7,7,1,0,20);
 
     if TargetAr<>nil then
      TargetAr.healt:=TargetAr.healt+uron;
@@ -1341,7 +1366,7 @@ begin
  If target<>nil then
   angle:=CalcAngle(target.x-x,Target.y-y);
 
- GLe.DrawImage(x,y,10+healt/20,10+healt/10,angle,true,ImQueen);
+ GLe.DrawImage(x,y,10+healt/20,10+healt/10,angle,true,false,ImQueen);
 { GLE.Line(x-healt/20,y-healt/20,x+healt/20,y+healt/20);
  GLE.Line(x+healt/20,y-healt/20,x-healt/20,y+healt/20);
 
@@ -1495,7 +1520,7 @@ begin
  // gle.SetColor(1,1,1,0.005);
  // gle.DrawImage(0,0,form1.Panel1.ClientWidth,form1.Panel1.ClientHeight,0,false,imb);
   gle.SetColor(0,1,0,0.8);
-  gle.DrawImage(x, y,40+random(20),40+random(20),Random(360),true,ImBlood);
+  gle.DrawImage(x, y,40+random(20),40+random(20),Random(360),true,false,ImBlood);
  gle.EndRenderToTex;
 
  Free;
@@ -1528,7 +1553,7 @@ begin
  If target<>nil then
   angle:=CalcAngle(target.x-x,Target.y-y);
 
- GLe.DrawImage(x,y,20+healt/20,20+healt/20,angle,true,ImGrom);
+ GLe.DrawImage(x,y,20+healt/20,20+healt/20,angle,true,false,ImGrom);
 { GLE.Ellipse(x,y,healt/20,healt/40,0,10);
  GLE.Ellipse(x,y,healt/40,healt/20,0,10);
 
@@ -1705,7 +1730,7 @@ procedure TFire.draw;
 begin
  gle.SwichBlendMode(bmAdd);
  gle.SetColor(random/2+0.5,random/3,random/5,1-distance/MaxDistance);
- gle.DrawImage(x,y,20,20,0,true,ImFire);
+ gle.DrawImage(x,y,20,20,0,true,false,ImFire);
  gle.SwichBlendMode(bmNormal);
 end;
 
@@ -1748,6 +1773,102 @@ procedure TWeapon.kill;
 begin
  Bullets.Remove(self);
  free
+end;
+
+{ TBoomBullet }
+
+procedure TBoomBullet.Add(ParentArmor: TArmor; x, y, dx, dy,size: single);
+begin
+ Self.Parent:= ParentArmor;
+ self.size := size;
+ self.x:=x;
+ self.y:=y;
+ self.dx:=dx;
+ self.dy:=dy;
+ self.speed:=5;
+ normalvector(self.dx,self.dy,self.speed);
+ self.MaxDistance:=70;
+ self.damage:=30;
+ self.distance:=0;
+ self.TypeBullet:= bBoomBullet;
+end;
+
+procedure TBoomBullet.draw;
+begin
+ gle.SwichBlendMode(bmAdd);
+ gle.SetColor(0,1,0,0.8);
+// gle.Ellipse(x,y,size/10,size/10,1,0,5);
+ gle.DrawImage(x,y,size/5,size/5,0,true,false,ImFire);
+ gle.SwichBlendMode(bmNormal);
+end;
+
+procedure TBoomBullet.move;
+ var
+ i:integer;
+ zombi:TMonstr;
+ bbu:TBoomBullet;
+begin
+ x:=x+dx;
+ y:=y+dy;
+ distance:=distance+Round(sqrt(dx*dx+dy*dy));
+
+ size:=size-1;
+
+ if size < 3 then
+ begin
+  kill;
+  exit;
+ end;
+
+ i:=0;
+ While i<m.Count do
+ begin
+  Zombi:=TMonstr(m.Items[i]);
+  if Zombi<>nil then
+  if SQRT(sqr(Zombi.x-x)+sqr(Zombi.y-y))<10+Zombi.healt/10 then
+  begin
+   Zombi.healt:=Zombi.healt-Round(damage*size/100);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   bbu:=TBoomBullet.Create;
+   bbu.Add(parent,x,y,0.5-random,0.5-random,size/1.5);
+   bullets.add(bbu);
+
+   if Zombi.healt<=0 then
+   begin
+    Zombi.Deat;
+    Zombi:=nil;
+    Parent.Rang:=Parent.Rang+0.1;
+
+
+   end;
+
+   kill;
+   exit;
+
+ //  Add(parent,x,y,-0.01,0 );
+  //  Add(parent,x,y,0, 0.01 );
+  //  Add(parent,x,y,0,-0.01 );
+
+  end;
+  i:=i+1;
+ end;
+
+ if (distance>=MaxDistance)or (x<0) or (x>=form1.Panel1.ClientWidth) or (y<0) or (y>=form1.Panel1.ClientHeight) then
+  kill;
+
+
 end;
 
 end.

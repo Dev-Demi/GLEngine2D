@@ -31,17 +31,23 @@ type
 var
   Form1: TForm1;
   GLE:TGLEngine;
-  imAll,im,PNG,back,CreateTex,grass:Cardinal;
+  imAll,im,PNG,back,CreateTex,grass,d:Cardinal;
   aminBoom,aminBoomPlus:TGLAnim;
 //  gif:TGLGifAnim;
   x,y,dx,dy:integer;
   FontIm:Cardinal;
+  TestArray : array of TGLPoint;
 implementation
 
 {$R *.dfm}
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
+
+ SetLength(TestArray, 11);
+
+
+
  // Создаём движёк
  GLE:=TGLEngine.Create;
  //
@@ -50,6 +56,9 @@ begin
  //             на чём будем рисовать | ширина полотна     | высота полотна      | качество сглаживания
  GLE.VisualInit(GetDC(Panel1.Handle)  , Panel1.ClientWidth , Panel1.ClientHeight , StrToInt(ComboBox1.Text));
  // Загружаем изображения
+
+ GLE.LoadImage('e:\d.png',d,false);
+
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'0.tga',im,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'1.png',png,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'back.jpg',back,false);
@@ -238,6 +247,8 @@ begin
    if (x<=0) or(x>=Panel1.ClientWidth) then dx:=-dx;
    if (y<=0) or(y>=Panel1.ClientHeight) then dy:=-dy;
 
+
+
  gle.EndRenderToTex;
 
  gle.SetColor(1,1,1,1);
@@ -255,6 +266,16 @@ begin
  Gle.TextOutUseImageFont(12,12,'Текстурный шрифт под углом'+#13+'Вторая строка',FontIm,x/10,24,24);
   gle.SetColor(1,1,1,0.9);
  Gle.TextOutUseImageFont(10,10,'Текстурный шрифт под углом'+#13+'Вторая строка',FontIm,x/10,24,24);
+
+ for i:=0 to 10 do
+ begin
+  TestArray[i].x:=Random*50;
+  TestArray[i].y:=Random*50;
+ end;
+
+ GLE.TextOut(450,370,'polygon');
+ gle.SetColor(1,0,0,1);
+ gle.Polygon(450,380,0,TestArray);
 
  GLE.FinishRender;
 end;
