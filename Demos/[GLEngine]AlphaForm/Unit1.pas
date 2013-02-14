@@ -119,7 +119,7 @@ begin
  randomize;
  GLE:=TGLEngine.Create;
  GLE.VisualInit(GetDC(Panel1.Handle),w,h,0);
- GLE.LoadImage(ExtractFilePath(application.ExeName)+'снеж.png',im,false);
+ GLE.LoadImage(ExtractFilePath(application.ExeName)+'Snow.png',im,false);
  ToBmp:=gle.CreateImage(w,h);
  Parts:=TList.Create;
  gle.SwichBlendMode(bmAdd);

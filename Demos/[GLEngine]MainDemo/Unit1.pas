@@ -36,7 +36,7 @@ var
 //  gif:TGLGifAnim;
   x,y,dx,dy:integer;
   FontIm:Cardinal;
-  TestArray : array of TGLPoint;
+  TestArray,TestArrayTes : array of TGLPoint;
 implementation
 
 {$R *.dfm}
@@ -45,6 +45,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 begin
 
  SetLength(TestArray, 11);
+ SetLength(TestArrayTes, 11);
 
 
 
@@ -57,7 +58,7 @@ begin
  GLE.VisualInit(GetDC(Panel1.Handle)  , Panel1.ClientWidth , Panel1.ClientHeight , StrToInt(ComboBox1.Text));
  // Загружаем изображения
 
- GLE.LoadImage('e:\d.png',d,false);
+// GLE.LoadImage('e:\d.png',d,false);
 
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'0.tga',im,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'1.png',png,false);
@@ -275,7 +276,13 @@ begin
 
  GLE.TextOut(450,370,'polygon');
  gle.SetColor(1,0,0,1);
- gle.Polygon(450,380,0,TestArray);
+ //gle.Polygon(450,380,0,TestArray);
+
+ gle.PolygonTess(450,380,0,TestArray);
+
+// gle.Tesselate(TestArray,TestArrayTes);
+
+ // gle.PolygonFromArray(480,380,0,TestArrayTes);
 
  GLE.FinishRender;
 end;

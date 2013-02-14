@@ -87,6 +87,7 @@ Type
    pfd:TPixelFormatDescriptor;
    AAFormat:Integer;
    xl,yl:single;
+   w,h:word;
 
 
 //   gmf: array [0..255] of GLYPHMETRICSFLOAT; // ìàññèâ òðåáóåòñÿ äëÿ âåêòîðíîãî
@@ -105,9 +106,11 @@ Type
   public
    dcvis:hdc;
    hrcvis:HGLRC;
-   FontHandle: GLuint;
+ //  FontHandle: Integer;
 
   {+}Procedure VisualInit(dc:HDC;width,height:word;AntiAlias:integer);
+  {+}Function GetGLEngineWidth:word;
+  {+}Function GetGLEngineHeight:word;
 
   {+}Function GetTimeDrawFrame:double;
   {+}Function GetFPS:Integer;
@@ -141,10 +144,16 @@ Type
   {+}Procedure Bar(x1, y1, x2, y2, x3, y3, x4, y4:single);  Overload ;
   {+}Procedure Bar(x1, y1, x2, y2:single);  Overload;
   {+}Procedure Bar(x, y, w, h, angle:single);  Overload;
+     Procedure BarClassic(x, y, w, h, angle:single);
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
-     Procedure Polygon(x,y,AngleRotate:single; n: array of TGLPoint);
+     Procedure Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+     procedure PolygonTexture(x,y,AngleRotate,TexAngle:single;Trans, Scale: TGLPoint; vertex,tex: array of TGLPoint; image:Cardinal);
+     procedure PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint ); // Ñïàñèáî cain
+     Procedure Tesselate (var inVertexArray,outVertexArray: array of TGLPoint);
+
+     procedure PolygonFromArray( x, y, AngleRotate: single; n: array of TGLPoint );
 
   {+}Procedure SetTextStyle(NameFont:string; size:integer);
   {+}Procedure TextOut(x,y:single; text:string; angle:single=0);
@@ -163,9 +172,12 @@ Type
   {+}Function  CreateImage(w,h:integer):Cardinal;
   {+}function  LoadImage(Filename: String; var Texture : Cardinal; LoadFromRes : Boolean) : Boolean;
   {+}Procedure DrawImage(x,y,w,h,Angle:single;Center,tile:boolean;Image:Cardinal);
-     Procedure SetCurrentImage(Image:Cardinal);
-     Procedure DrawCurrentImage(x,y,w,h,Angle:single;Center,tile:boolean);
+  {+}Procedure SetCurrentImage(Image:Cardinal);
+  {+}Procedure DrawCurrentImage (x,y,w,h,Angle:single;Center,tile:boolean);
      Procedure DrawCurrentImage2(x,y,w,h,Angle:single;Center,tile:boolean);
+
+     procedure GetImageWidth(image:cardinal; var w:Integer);
+     procedure GetImageHeight(image:cardinal; var h:Integer);
 
      Procedure DrawTileImage(x,y,w,h,u,v,Angle:single;Image:Cardinal);
   {+}Procedure SaveImage(FileName:string;var Texture : Cardinal);
@@ -191,13 +203,16 @@ Type
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Single); Overload;
 
 
-  Procedure Clear;
+  {+}Procedure Clear;
   {+}Procedure FinishRender;
   Procedure VisualDone;
   private
  end;
 
 implementation
+
+var
+ FontHandle: Integer;
 
 // var
 //   FirstRC,SecondRC:HGLRC;
@@ -777,6 +792,20 @@ glPushMatrix();
 glPopMatrix();
 end;
 
+procedure TGLEngine.BarClassic(x, y, w, h, angle: single);
+begin
+glPushMatrix();
+ glTranslated(x,y,0);
+ glRotatef(Angle, 0,0,1);
+ glBegin(GL_QUADS);
+  glVertex3d(0,0,0);
+  glVertex3d(w,0,0);
+  glVertex3d(w,h,0);
+  glVertex3d(0,h,0);
+ glEnd();
+glPopMatrix();
+end;
+
 procedure TGLEngine.BarGrad(x1, y1, x2, y2, x3, y3, x4, y4: single; c1, c2,
   c3, c4: TGLColor);
 begin
@@ -903,6 +932,10 @@ end;
 
 procedure TGLEngine.DrawImage(x,y,w,h,Angle:single;Center,tile:boolean;Image:Cardinal);
 begin
+ glMatrixMode(GL_TEXTURE);
+  glLoadIdentity();
+ glMatrixMode(GL_MODELVIEW);
+
  glBindTexture(GL_TEXTURE_2D, Image);
  glEnable(GL_TEXTURE_2D);
  glPushMatrix();
@@ -1194,7 +1227,7 @@ begin
 //   glRotatef(Angle, 0,0,1);
 //  glScalef (15.0, -15.0, 1.0);                      // Uloží souèasný stav display listù
 ////////////////////////
-  glListBase(FontHandle);                      // Nastaví základní znak na 32
+  glListBase(FontHandle);
   glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslí display listy
   glPopMatrix();
   glPopAttrib;
@@ -1519,6 +1552,9 @@ begin
   gluPerspective(45.0,Width/Height,0.1,100.0);            // V¤poøet perspektivy
   glMatrixMode(GL_MODELVIEW);                             // Zvolý matici Modelview
   glLoadIdentity;   }
+
+  self.w:=w;
+  self.h:=h;
 
 if dcvis<>0 then
  begin
@@ -1863,7 +1899,6 @@ begin
   glPushMatrix;
   glLoadIdentity;
    toFrameBufer:=true;
-   ////////////////// çà÷åì ýòî ÿ íå çíàþ :-( /////
  glDisable(GL_TEXTURE_2D);
 end;
 
@@ -1903,11 +1938,10 @@ begin
 // glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
  glGenerateMipmap(textureId);
  glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
-             GL_RGBA, GL_UNSIGNED_BYTE, 0);
+             GL_RGBA, GL_UNSIGNED_BYTE, nil);
  glBindTexture(GL_TEXTURE_2D, 0);
   result :=textureId;
 end;
-
 
 procedure TGLEngine.Clear;
 begin
@@ -2007,21 +2041,191 @@ begin
  VBOSprite.add(x,y,w,h);
 end;
 
-
-
-procedure TGLEngine.Polygon(x,y,AngleRotate:single; n: array of TGLPoint);
+procedure TGLEngine.Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
 var
  i:integer;
 begin
 glPushMatrix();
+
+ glMatrixMode(GL_TEXTURE);
+ glRotatef(TesAngleRotate,0,0,1);
+ glMatrixMode(GL_MODELVIEW);
+
  glTranslated(x,y,0);
  glRotatef(AngleRotate, 0,0,1);
   glBegin(GL_POLYGON);
+// glBegin(GL_TRIANGLE_FAN );
   For i:=0 to High(n)  do
    glVertex3d(n[i].x,n[i].y,0);
   glEnd();
 glPopMatrix();
 
+end;
+
+function TGLEngine.GetGLEngineHeight: word;
+begin
+ result:=h;
+end;
+
+function TGLEngine.GetGLEngineWidth: word;
+begin
+ result:=w;
+end;
+
+{::cain}
+procedure TGLEngine.PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint );
+var
+ i:integer;
+ vvv : array of TVector3d;
+ tglutessobj : pGLUtesselator;
+begin
+ glPushMatrix();
+ tglutessobj := glunewtess;
+ gluTessCallback( tglutessobj, GLU_TESS_BEGIN, @glBegin );
+ gluTessCallback( tglutessobj, GLU_TESS_VERTEX, @glVertex3dv );
+ gluTessCallback( tglutessobj, GLU_TESS_END, @glEnd );
+
+ SetLength( vvv, Length( n ) );
+
+ glTranslated(x,y,0);
+ glRotatef(AngleRotate, 0,0,1);
+
+ glNewList(1, GL_COMPILE);
+
+ gluTessBeginPolygon ( tglutessobj, nil );
+  For i:=0 to High( n )  do
+   begin
+    vvv[ i ][ 0 ] := n[ i ].x;
+    vvv[ i ][ 1 ] := n[ i ].y;
+    vvv[ i ][ 2 ] := 0;
+    gluTessVertex(tglutessobj, vvv[ i ], @vvv[ i ] );
+   end ;
+ gluTessEndPolygon( tglutessobj );
+ glEndList;
+
+ glCallList( 1 );
+ glDeleteLists( 1, 1 );
+
+ gluDeleteTess( tglutessobj );
+ SetLength( vvv, 0 );
+
+ glPopMatrix();
+end;
+{cain::}
+
+Procedure myVertex(outVertex:PVector3d); stdcall;
+ begin
+  messagebox(0,PChar(FloatToStr(outVertex^[0])),'test',0);
+ end;
+
+procedure TGLEngine.Tesselate(var inVertexArray,
+  outVertexArray: array of TGLPoint);
+var
+ tobj : pGLUtesselator;
+ inv,outv : array of TVector3d;
+ i,k:integer;
+begin
+  tobj := gluNewTess();
+  SetLength( inv, Length( inVertexArray ) );
+  SetLength( outv, Length( inVertexArray ) );
+
+  For i:=0 to High( inVertexArray )  do
+   begin
+    inv[ i ][ 0 ] := inVertexArray[ i ].x;
+    inv[ i ][ 1 ] := inVertexArray[ i ].y;
+    inv[ i ][ 2 ] := 0;
+   end ;
+
+ gluTessCallback( tobj, GLU_TESS_BEGIN, nil );
+ gluTessCallback( tobj, GLU_TESS_VERTEX, @myVertex );
+ gluTessCallback( tobj, GLU_TESS_END, nil );
+
+   gluTessBeginPolygon(tobj, 0);
+      gluTessBeginContour(tobj);
+
+      For i:=0 to High( inVertexArray )  do
+      begin
+       k:=i;
+       gluTessVertex(tobj, inv[ i ], @inv[ i ] );
+      end;
+
+      gluTessEndContour(tobj);
+   gluTessEndPolygon(tobj);
+
+   For i:=0 to High( inVertexArray )  do
+   begin
+    outVertexArray[ i ].x:= inv[ i ][ 0 ];
+    outVertexArray[ i ].y:= inv[ i ][ 1 ];
+   end ;
+
+end;
+
+procedure TGLEngine.PolygonFromArray(x, y, AngleRotate: single;
+  n: array of TGLPoint);
+var
+ v : array of TVector3d;
+ i:integer;
+begin
+glPushMatrix();
+ glTranslated(x,y,0);
+ glRotatef(AngleRotate, 0,0,1);
+//  glBegin(GL_POLYGON);
+ glBegin(GL_TRIANGLE_FAN );
+  For i:=0 to High(n)  do
+   glVertex3d(n[i].x,n[i].y,0);
+  glEnd();
+glPopMatrix();
+end;
+
+procedure TGLEngine.PolygonTexture(x, y, AngleRotate,TexAngle: single; Trans, Scale: TGLPoint; vertex,
+  tex: array of TGLPoint; image: Cardinal);
+var
+ i:integer;  
+begin
+glPushMatrix();
+
+
+ glBindTexture(GL_TEXTURE_2D, Image);
+ glEnable(GL_TEXTURE_2D);
+
+ glMatrixMode(GL_TEXTURE);
+ glLoadIdentity();
+
+ glTranslated(0.5,0.5,0);
+  glRotatef(TexAngle,0,0,1);
+ glTranslated(-0.5,-0.5,0); 
+
+ glTranslated(Trans.x,Trans.y,0);
+ glScalef(Scale.x,Scale.y,0);
+
+
+ glMatrixMode(GL_MODELVIEW);
+
+ glTranslated(x,y,0);
+ glRotatef(AngleRotate, 0,0,1);
+  glBegin(GL_POLYGON);
+// glBegin(GL_TRIANGLE_FAN );
+  For i:=0 to High(vertex)  do
+  begin
+   glTexCoord3d(tex[i].x,tex[i].y,0);
+   glVertex3d(vertex[i].x,vertex[i].y,0);
+
+  end;
+  glEnd();
+  glDisable(GL_TEXTURE_2D);
+glPopMatrix();
+end;
+
+procedure TGLEngine.GetImageHeight(image: cardinal; var h:Integer);
+begin
+ glBindTexture(GL_TEXTURE_2D, image);
+ glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, @h);
+end;
+
+procedure TGLEngine.GetImageWidth(image: cardinal; var w:Integer);
+begin
+ glBindTexture(GL_TEXTURE_2D, image);
+ glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @w);
 end;
 
 { TVBOPrimitive }

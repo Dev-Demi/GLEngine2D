@@ -13,6 +13,7 @@ type
     Memo1: TMemo;
     procedure Timer1Timer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
   public
@@ -27,7 +28,6 @@ type
    pos:TSpoint;
    VecMove:TSpoint;
    color:TGLColor;
-
    sizep:single;
    Caption:string;
    ds,smax,smin:single;
@@ -71,9 +71,7 @@ end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 var
  i:integer;
-
-   o:TPart;
-
+ o:TPart;
 begin
  gle.BeginRender(false);
  gle.AntiAlias(true);
@@ -131,17 +129,20 @@ begin
   for i:=1 to 3 do
    gle.DrawImage(pos.x+random(3)-6,pos.y+random(3)-6,2*sizep/i,2*sizep/i,0,true,false,im);
   gle.SwichBlendMode(bmNormal);
-  gle.SetColor(0,0,0,1);
+  gle.SetColor(0,0,0,0.1);
   gle.TextOut(Pos.x-1,pos.y-1,Caption);
-  gle.SetColor(0,0,0,1);
+  gle.SetColor(0,0,0,0.1);
   gle.TextOut(Pos.x+1,pos.y+1,Caption);
  gle.SetColor(1,1,1,1);
  gle.TextOut(Pos.x,pos.y,Caption);
- gle.SetColor(1,1,1,1);
+ gle.SwichBlendMode(bmAdd);
+ gle.LineWidth(2);
+ gle.SetColor(Color.Red,color.Green,color.Blue,1);
  nearp:= FindRound;
  if nearp<>nil then
  if caption<>'' then
-  gle.Line(pos.x,pos.y,nearp.pos.x,nearp.pos.y);
+  gle.Bolt(pos.x,pos.y,nearp.pos.x,nearp.pos.y);
+//  gle.Line(pos.x,pos.y,nearp.pos.x,nearp.pos.y);
 // gle.Ellipse(pos.x,pos.y,size/4,size/4,0,20);
 end;
 
@@ -151,6 +152,7 @@ var
  min,d:single;
  o:Tpart;
 begin
+ result:=nil;
  min:=10000;
  for i:=0 to Parts.Count-1 do
   begin
@@ -177,6 +179,11 @@ begin
  if (pos.x<=0)or(pos.x>=Form1.Panel1.ClientWidth) then VecMove.x:=-VecMove.x;
  if (pos.y<=0)or(pos.y>=Form1.Panel1.ClientHeight) then VecMove.y:=-VecMove.y;
 
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+ gle.Resize(Panel1.Width,Panel1.Height);
 end;
 
 end.
