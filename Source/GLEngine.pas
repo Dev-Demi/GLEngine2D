@@ -183,6 +183,17 @@ Type
   {+}Procedure SaveImage(FileName:string;var Texture : Cardinal);
   {+}Procedure SaveImageAsPNG(Filename:String; Im:Cardinal);
   {+}Procedure GetBMP32FromImage(Im:Cardinal;var BMP32:TBitMap);
+
+
+{------------------------------------------------------------------}
+{  Load/Save GL textures by aliday a@kubado.ru                     }
+{------------------------------------------------------------------}
+
+     function SaveRAWTexture(FileName: string; var Texture:Cardinal) : Boolean;
+     function LoadRAWTexture(Filename: String; var Texture : Cardinal; LoadFromResource : Boolean) : Boolean;
+
+     Procedure ScreenShot(Var BMP:TBitMap;AWidth,AHeight:integer);
+
   {+}Procedure FreeImage(var Texture : Cardinal);
 
   Procedure LoadAnimation(FileName:string; w,h,dw,dh:integer; var An:TGLAnim; LoadFromRes : Boolean);
@@ -2226,6 +2237,130 @@ procedure TGLEngine.GetImageWidth(image: cardinal; var w:Integer);
 begin
  glBindTexture(GL_TEXTURE_2D, image);
  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @w);
+end;
+
+procedure TGLEngine.ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
+var
+  LPixels: array of Byte;
+  LLine: PByteArray;
+  LBitmap: TBitmap;
+  Index: Integer;
+begin
+
+  LBitmap := TBitmap.Create;
+  try
+    LBitmap.PixelFormat := pf32bit;
+    LBitmap.Height := AHeight;
+    LBitmap.Width := AWidth;
+
+    //  width * height * 3 bytes/pixel
+    SetLength(LPixels, AWidth * AHeight * 4);
+
+    //  tell open gl which buffer we're interested in
+    glReadBuffer(GL_BACK);
+    //  read pixels
+    glReadPixels(0, 0, AWidth, AHeight, GL_RGBA, GL_UNSIGNED_BYTE, @LPixels);
+    //  scan each line from bitmap
+    for Index := 0 to AHeight -1 do begin
+      LLine := LBitmap.ScanLine[ Index ];
+      //  move data from LPixels to LLine, data size = Width * 3(bytes/pixel)
+      Move(LPixels[ Index * AWidth ], LLine^[0], AWidth * 4);
+    end; // for Index := 0 to AHeight -1 do begin
+    //  save the bitmap
+  //  LBitmap.SaveToFile('E:\2.bmp');
+    BMP.Assign(LBitmap);
+    //  if we reached this line, we're pretty much OK
+
+  finally
+    LBitmap.Free;
+  end;
+
+end;
+
+{------------------------------------------------------------------}
+{  Load/Save GL textures by aliday a@kubado.ru                     }
+{------------------------------------------------------------------}
+
+type
+  TCreateTextureParams = record
+    Width, Height, Format : Word;
+  end;
+
+function TGLEngine.LoadRAWTexture(Filename: String; var Texture: Cardinal;
+  LoadFromResource: Boolean): Boolean;
+var
+  RAWFile: File;
+  RawLength: LongWord;
+  pData : Pointer;
+  CreateTextureParams: TCreateTextureParams;
+  // used for loading from resource
+  ResStream : TResourceStream;
+begin
+  if LoadFromResource then // Load from resource
+  begin
+    try
+      ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), 'GL');
+      //RawLength := StreamSize(RAWFile) - SizeOf(CreateTextureParams);
+      GetMem(pData, RAWLength);
+      ResStream.ReadBuffer(pData^, RawLength);            // RAW Data
+      ResStream.ReadBuffer(CreateTextureParams, SizeOf(CreateTextureParams));  // FileHeader
+      ResStream.Free;
+    except on
+      EResNotFound do
+      begin
+        MessageBox(0, PChar('File not found in resource - ' + Filename), PChar('GL Texture'), MB_OK);
+        Exit;
+      end
+      else
+      begin
+        MessageBox(0, PChar('Unable to read from resource - ' + Filename), PChar('GL Unit'), MB_OK);
+        Exit;
+      end;
+    end;
+  end
+  else
+  begin
+    AssignFile(RAWFile, Filename);
+    Reset(RAWFile, 1);
+    RawLength := FileSize(RAWFile) - SizeOf(CreateTextureParams);
+    GetMem(pData, RawLength);
+    BlockRead(RAWFile, pData^, RawLength);
+    BlockRead(RAWFile, CreateTextureParams, SizeOf(CreateTextureParams));
+  end;
+  Texture :=CreateTexture(CreateTextureParams.Width, CreateTextureParams.Height, CreateTextureParams.Format, pData);
+  FreeMem(pData);
+  result :=TRUE;
+end;
+
+function TGLEngine.SaveRAWTexture(FileName: string; var Texture: Cardinal): Boolean;
+var
+  RAWFile: File;
+  RawLength: LongWord;
+  pData : Pointer;
+  CreateTextureParams: TCreateTextureParams;
+  Width,Height:integer;
+begin
+  glBindTexture(GL_TEXTURE_2D, Texture);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @Width);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, @Height);
+
+  RawLength := Width * Height * 4;
+  GetMem(pData, RawLength);
+  glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE,  pData);
+
+  CreateTextureParams.Width := Width;
+  CreateTextureParams.Height := Height;
+  CreateTextureParams.Format := GL_RGBA;
+
+  AssignFile(RAWFile, Filename);
+  Rewrite(RAWFile, 1);
+
+  BlockWrite(RAWFile, pData^, RawLength);
+  BlockWrite(RAWFile, CreateTextureParams, SizeOf(CreateTextureParams));
+  CloseFile(RAWFile);
+
+  FreeMem(pData);
+  result :=TRUE;
 end;
 
 { TVBOPrimitive }
