@@ -83,6 +83,11 @@ Type
 
   TGLEngine=class
   private
+   NeedScreenShot:Boolean;
+   scs_BMP:TBitMap;
+   scs_AWidth,scs_AHeight:integer;
+
+
    VBOSprite:TVBOSprite;
    pfd:TPixelFormatDescriptor;
    AAFormat:Integer;
@@ -193,6 +198,7 @@ Type
      function LoadRAWTexture(Filename: String; var Texture : Cardinal; LoadFromResource : Boolean) : Boolean;
 
      Procedure ScreenShot(Var BMP:TBitMap;AWidth,AHeight:integer);
+     Procedure _ScreenShot(Var BMP:TBitMap;AWidth,AHeight:integer);
 
   {+}Procedure FreeImage(var Texture : Cardinal);
 
@@ -849,9 +855,18 @@ procedure TGLEngine.FinishRender;
 begin
  VBOSprite.Draw;
  glFlush();
+
  swapBuffers(dcvis);
+
+ if needScreenShot then
+  begin
+   needScreenShot:=false;
+   _ScreenShot(scs_BMP,scs_AWidth,scs_AHeight);
+  end;
+
  QueryPerformanceCounter(EndDrawTime);
  wglMakeCurrent(0, 0);
+
  DrawFrameCount:=DrawFrameCount+1;
  If 1000.0 *(EndDrawTime - TimeDraw) / ClockRate>1000 then
    begin
@@ -1474,6 +1489,7 @@ var
  QW:int64;
  rc0:HGLRC;
 begin
+ NeedScreenShot:=false;
  GetPixelFormat(AntiAlias);
  SetDCPixelFormat(DC);
  rc0:=wglCreateContext(DC);
@@ -2195,7 +2211,6 @@ var
 begin
 glPushMatrix();
 
-
  glBindTexture(GL_TEXTURE_2D, Image);
  glEnable(GL_TEXTURE_2D);
 
@@ -2209,7 +2224,6 @@ glPushMatrix();
  glTranslated(Trans.x,Trans.y,0);
  glScalef(Scale.x,Scale.y,0);
 
-
  glMatrixMode(GL_MODELVIEW);
 
  glTranslated(x,y,0);
@@ -2220,7 +2234,6 @@ glPushMatrix();
   begin
    glTexCoord3d(tex[i].x,tex[i].y,0);
    glVertex3d(vertex[i].x,vertex[i].y,0);
-
   end;
   glEnd();
   glDisable(GL_TEXTURE_2D);
@@ -2239,40 +2252,37 @@ begin
  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @w);
 end;
 
-procedure TGLEngine.ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
+procedure TGLEngine.ScreenShot(var BMP: TBitMap; AWidth, AHeight: integer);
+begin
+ // ÒÓı‡ÌËÚ ‚ BMP !—À≈ƒ”ﬁŸ»…! Í‡‰! 
+ needScreenShot:=true;
+ scs_BMP:=BMP;
+ scs_AWidth:= AWidth;
+ scs_AHeight:= AHeight;
+end;
+
+procedure TGLEngine._ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
 var
   LPixels: array of Byte;
   LLine: PByteArray;
-  LBitmap: TBitmap;
   Index: Integer;
+  p1, p2: pointer;
 begin
-
-  LBitmap := TBitmap.Create;
   try
-    LBitmap.PixelFormat := pf32bit;
-    LBitmap.Height := AHeight;
-    LBitmap.Width := AWidth;
+    BMP.PixelFormat := pf24bit;
+    BMP.Height := AHeight;
+    BMP.Width := AWidth;
 
-    //  width * height * 3 bytes/pixel
-    SetLength(LPixels, AWidth * AHeight * 4);
-
-    //  tell open gl which buffer we're interested in
-    glReadBuffer(GL_BACK);
-    //  read pixels
-    glReadPixels(0, 0, AWidth, AHeight, GL_RGBA, GL_UNSIGNED_BYTE, @LPixels);
-    //  scan each line from bitmap
-    for Index := 0 to AHeight -1 do begin
-      LLine := LBitmap.ScanLine[ Index ];
-      //  move data from LPixels to LLine, data size = Width * 3(bytes/pixel)
-      Move(LPixels[ Index * AWidth ], LLine^[0], AWidth * 4);
-    end; // for Index := 0 to AHeight -1 do begin
-    //  save the bitmap
-  //  LBitmap.SaveToFile('E:\2.bmp');
-    BMP.Assign(LBitmap);
-    //  if we reached this line, we're pretty much OK
-
+    SetLength(LPixels, AWidth * AHeight * 3);
+    glReadBuffer(GL_BACK); //GL_FRONT     GL_BACK
+    glReadPixels(0, 0, AWidth, AHeight, GL_BGR, GL_UNSIGNED_BYTE, @LPixels[0]);
+    for Index := 0 to AHeight -1 do
+     begin
+      p1 := BMP.ScanLine[AHeight -1-Index];
+      p2 := pointer( integer(LPixels)+ (Index * BMP.Width * 3));
+      CopyMemory( p1, p2, BMP.Width * 3);
+     end;
   finally
-    LBitmap.Free;
   end;
 
 end;
