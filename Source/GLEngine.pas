@@ -2140,9 +2140,9 @@ begin
 end;
 {cain::}
 
-Procedure myVertex(outVertex:PVector3d); stdcall;
+Procedure myVertex(outVertex:TVector3d); stdcall;
  begin
-  messagebox(0,PChar(FloatToStr(outVertex^[0])),'test',0);
+  messagebox(0,PChar(FloatToStr(outVertex[0])),'test',0);
  end;
 
 procedure TGLEngine.Tesselate(var inVertexArray,
