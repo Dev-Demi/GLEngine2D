@@ -62,7 +62,8 @@ begin
 
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'0.tga',im,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'1.png',png,false);
- GLE.LoadImage(ExtractFilePath(application.ExeName)+'back.jpg',back,false);
+// GLE.LoadImage(ExtractFilePath(application.ExeName)+'back.jpg',back,false);
+ GLE.LoadImage(ExtractFilePath(application.ExeName)+'f:\0\s.jpg',back,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'back.jpg',imAll,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'tile1.jpg',grass,false);
  GLE.LoadImage(ExtractFilePath(application.ExeName)+'..\..\fonts\Courier New Bold.png',FontIm,false);
@@ -278,7 +279,7 @@ begin
  gle.SetColor(1,0,0,1);
  //gle.Polygon(450,380,0,TestArray);
 
- gle.PolygonTess(480,380,0,TestArray);
+ gle.PolygonTess(450,380,0,TestArray);
 
 // gle.Tesselate(TestArray,TestArrayTes);
 

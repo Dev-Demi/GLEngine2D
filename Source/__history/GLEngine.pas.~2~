@@ -3,9 +3,9 @@ unit GLEngine;
 interface
 uses
   Windows,   Graphics, Classes, JPEG, SysUtils,
-  dglOpenGL,
+  dglOpenGL,GifImage,
 {$IF CompilerVersion < 22.0}
-  pngimageOLD,GifImageOLD,
+  pngimageOLD,
  {$ifend}
  {$IF CompilerVersion >= 22.0}
   PNGImage,
@@ -168,8 +168,8 @@ Type
      procedure PolygonFromArray( x, y, AngleRotate: single; n: array of TGLPoint );
 
   {+}Procedure SetTextStyle(NameFont:string; size:integer);
-  {+}Procedure TextOut(x,y:single; text:AnsiString; angle:single=0);
-     Procedure TextOutUseImageFont(x,y:single; text:AnsiString; Font:Cardinal; angle:single=0;wchar:single=64;hchar:single=64);
+  {+}Procedure TextOut(x,y:single; text:string; angle:single=0);
+     Procedure TextOutUseImageFont(x,y:single; text:string; Font:Cardinal; angle:single=0;wchar:single=64;hchar:single=64);
   {+}Procedure KillFont;
 
   {+}Procedure SetColor(r,g,b,a:single);Overload;
@@ -222,7 +222,7 @@ Type
 
   {+}Procedure ShaderStart(Shader:Integer);
   {+}Procedure ShaderStop(Shader:Integer);
-  Function  ShaderGetUniform(Shader:Integer;uniform: PAnsiChar):GLuint;
+  Function  ShaderGetUniform(Shader:Integer;uniform: PChar):GLuint;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Integer); Overload;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Single); Overload;
 
@@ -1243,7 +1243,7 @@ begin
   DeleteObject(font);
 end;
 
-procedure TGLEngine.TextOut(x,y:single; text:AnsiString; angle:single=0);
+procedure TGLEngine.TextOut(x,y:single; text:string; angle:single=0);
 begin
   if text = '' then exit;                                 // Byl pøedán text?
 
@@ -1266,7 +1266,7 @@ begin
   glPopAttrib;
 end;
 
-procedure TGLEngine.TextOutUseImageFont(x, y: single; text: AnsiString;
+procedure TGLEngine.TextOutUseImageFont(x, y: single; text: string;
   Font: Cardinal; angle: single=0; wchar:single=64;hchar:single=64);
  var
   xp,yp{,dx,dy}:single;
@@ -2043,7 +2043,7 @@ begin
 end;
 
 function TGLEngine.ShaderGetUniform(Shader: Integer;
-  uniform: PAnsiChar): GLuint;
+  uniform: PChar): GLuint;
 begin
  Result := 0;
  if not GL_ARB_shading_language_100 then exit;

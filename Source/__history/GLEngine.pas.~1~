@@ -3,7 +3,8 @@ unit GLEngine;
 interface
 uses
   Windows,   Graphics, Classes, JPEG, SysUtils,
-  dglOpenGL,math,PngImage;
+  dglOpenGL,math,
+ PNGImage,GifImage;
 
 Type
 
@@ -71,7 +72,7 @@ Type
       Procedure Add;  virtual;abstract;
       Procedure Draw;
 
-      function IsExtensionSupported(szTargetExtension: AnsiString): boolean;
+      function IsExtensionSupported(szTargetExtension: string): boolean; 
     end;
 
   TVBOSprite = class(TVBOPrimitive)
@@ -88,7 +89,7 @@ Type
 
 
    VBOSprite:TVBOSprite;
-//   pfd:TPixelFormatDescriptor;
+   pfd:TPixelFormatDescriptor;
    AAFormat:Integer;
    xl,yl:single;
    w,h:word;
@@ -160,7 +161,7 @@ Type
      procedure PolygonFromArray( x, y, AngleRotate: single; n: array of TGLPoint );
 
   {+}Procedure SetTextStyle(NameFont:string; size:integer);
-  {+}Procedure TextOut(x,y:single; text:AnsiString; angle:single=0);
+  {+}Procedure TextOut(x,y:single; text:string; angle:single=0);
      Procedure TextOutUseImageFont(x,y:single; text:string; Font:Cardinal; angle:single=0;wchar:single=64;hchar:single=64);
   {+}Procedure KillFont;
 
@@ -174,9 +175,8 @@ Type
 
   {+}procedure AddBMPImage(Bmp:TBitMap;var Texture : Cardinal);
   {+}Function  CreateImage(w,h:integer):Cardinal;
-  {+}Procedure  LoadImage(Filename: String; var Texture : Cardinal; LoadFromRes : Boolean);
+  {+}function  LoadImage(Filename: String; var Texture : Cardinal; LoadFromRes : Boolean) : Boolean;
   {+}Procedure DrawImage(x,y,w,h,Angle:single;Center,tile:boolean;Image:Cardinal);
-  {+}Procedure DrawImageArea(x,y,w,h,Tx1,Ty1,Tx2,Ty2:single;Image:Cardinal);
   {+}Procedure SetCurrentImage(Image:Cardinal);
   {+}Procedure DrawCurrentImage (x,y,w,h,Angle:single;Center,tile:boolean);
      Procedure DrawCurrentImage2(x,y,w,h,Angle:single;Center,tile:boolean);
@@ -215,7 +215,7 @@ Type
 
   {+}Procedure ShaderStart(Shader:Integer);
   {+}Procedure ShaderStop(Shader:Integer);
-  Function  ShaderGetUniform(Shader:Integer;uniform: PAnsiChar):GLuint;
+  Function  ShaderGetUniform(Shader:Integer;uniform: PChar):GLuint;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Integer); Overload;
   Procedure ShaderSetUniform(Shader:Integer;uniform: GLuint; value0: Single); Overload;
 
@@ -381,9 +381,9 @@ begin
   result :=TRUE;
 end;
 
-procedure png8to24(png: TPNGImage);
+procedure png8to24(png: TPNGObject);
 var
- tmp: TPNGImage;
+ tmp: TPNGObject;
  tRNS: TChunktRNS;
  PLTE: TChunkPLTE;
  src, alpha: pByteArray;
@@ -394,7 +394,7 @@ begin
  PLTE:=png.Chunks.ItemFromClass(TChunkPLTE) as TChunkPLTE;
  if (tRNS=nil) or (PLTE=nil)
   then exit;
- tmp:=TPNGImage.CreateBlank(COLOR_RGBALPHA, 8, png.Width, png.Height);
+ tmp:=TPNGObject.CreateBlank(COLOR_RGBALPHA, 8, png.Width, png.Height);
  for y:=0 to png.Height-1 do
  begin
   src:=png.Scanline[y];
@@ -417,10 +417,11 @@ var
   Data : Array of byte;
   W, Width,il : Integer;
   H, Height : Integer;
-  png:TPNGImage;
+  png: TPNGObject;
   pb: PByteArray;
+  ResStream : TResourceStream;      // used for loading from resource
 begin
-  png := TPNGImage.Create;
+  png := TPNGObject.Create;
   png.LoadFromFile(FileName);
   Width :=png.Width;
   Height :=png.Height;
@@ -429,7 +430,7 @@ begin
 
   SetLength(Data, Width*Height*4);
 
-   il:=0;
+  il:=0;
   For H:=0 to Height-1 do
   Begin
    pb:=png.Scanline[H];
@@ -438,10 +439,7 @@ begin
       Data[il] :=pb[W*3+2];
       Data[il+1] :=pb[W*3+1];
       Data[il+2] :=pb[W*3];
-      if png.AlphaScanline[H]<>nil then
-       Data[il+3] :=png.AlphaScanline[H][W]
-      else
-       Data[il+3] :=255;
+      Data[il+3] :=png.AlphaScanline[H][W] ;
       inc(il,4);
     End;
   End;
@@ -944,8 +942,8 @@ else
   begin
    glTexCoord2f(0,0);  glVertex3f(0, 0, -pZ);
    glTexCoord2f(dx,0);  glVertex3f(pWidth, 0, -pZ);
-   glTexCoord2f(dx,dy); glVertex3f(pWidth, pHeight, -pZ);
-   glTexCoord2f(0,dy); glVertex3f(0,pHeight, -pZ);
+   glTexCoord2f(dx,-dy); glVertex3f(pWidth, pHeight, -pZ);
+   glTexCoord2f(0,-dy); glVertex3f(0,pHeight, -pZ);
   end
   else
   begin
@@ -970,27 +968,6 @@ begin
   glTranslated(x,y,0);
   glRotatef(Angle, 0,0,1);
   DrawQuad(x,y,0, w,h,Center,tile);
- glPopMatrix();
- glDisable(GL_TEXTURE_2D);
-end;
-
-procedure TGLEngine.DrawImageArea(x, y, w, h, Tx1, Ty1, Tx2, Ty2:single;
-  Image: Cardinal);
-begin
- glMatrixMode(GL_TEXTURE);
-  glLoadIdentity();
- glMatrixMode(GL_MODELVIEW);
-
- glBindTexture(GL_TEXTURE_2D, Image);
- glEnable(GL_TEXTURE_2D);
- glPushMatrix();
-  glTranslated(x,y,0);
-  glBegin(GL_QUADS);
-   glTexCoord2f(tx1,ty1);  glVertex3f(0, 0, 0);
-   glTexCoord2f(tx2,ty1);  glVertex3f(w, 0, 0);
-   glTexCoord2f(tx2,ty2);  glVertex3f(w, h, 0);
-   glTexCoord2f(tx1,ty2);  glVertex3f(0, h, 0);
-  glEnd;
  glPopMatrix();
  glDisable(GL_TEXTURE_2D);
 end;
@@ -1139,8 +1116,8 @@ begin
  glDisable( GL_LINE_STIPPLE );
 end;
 
-Procedure TGLEngine.LoadImage(Filename: String; var Texture: Cardinal;
-  LoadFromRes: Boolean);
+function TGLEngine.LoadImage(Filename: String; var Texture: Cardinal;
+  LoadFromRes: Boolean): Boolean;
 begin
  if copy(Uppercase(filename), length(filename)-3, 4) = '.BMP' then
   LoadBMPTexture(Filename, Texture, LoadFromRes);
@@ -1150,6 +1127,7 @@ begin
   LoadTGATexture(Filename, Texture, LoadFromRes);
  if copy(Uppercase(filename), length(filename)-3, 4) = '.PNG' then
   LoadPNGTexture(Filename, Texture, LoadFromRes);
+
 end;
 
 procedure flipIt(buffer: Pointer;w,h:integer);
@@ -1258,7 +1236,7 @@ begin
   DeleteObject(font);
 end;
 
-procedure TGLEngine.TextOut(x,y:single; text:AnsiString; angle:single=0);
+procedure TGLEngine.TextOut(x,y:single; text:string; angle:single=0);
 begin
   if text = '' then exit;                                 // Byl pøedán text?
 
@@ -1276,7 +1254,7 @@ begin
 //  glScalef (15.0, -15.0, 1.0);                      // Uloží souèasný stav display listù
 ////////////////////////
   glListBase(FontHandle);
-  glCallLists(length(text),GL_UNSIGNED_BYTE,PAnsiChar(text)); // Vykreslí display listy
+  glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslí display listy
   glPopMatrix();
   glPopAttrib;
 end;
@@ -1746,6 +1724,7 @@ end;
 Function BitMapInfoHeaderTo_BMP ( Header:PBITMAPINFOHEADER;lpbi:pointer ):tBitmap;
 VAR
  hBmp        : HBITMAP;
+ lpbiWanted  : pBitmapInfoHeader;
  dc          : HDC;
  bits        : pChar;
  bmp          : TBitmap;
@@ -1807,8 +1786,9 @@ var
   pix : pRGBAArray;
   W, Width : Integer;
   H, Height : Integer;
-  png: TPNGImage;
+  png: TPNGObject;
   pb: PByteArray;
+  ResStream : TResourceStream;      // used for loading from resource
 begin
   glBindTexture(GL_TEXTURE_2D, im);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @Width);
@@ -1816,7 +1796,7 @@ begin
   GetMem(pix, Width * Height * 4);
   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE,  pix);
 
-  png := TPNGImage.CreateBlank(COLOR_RGBALPHA,8,Width,Height);
+  png := TPNGObject.CreateBlank(COLOR_RGBALPHA,8,Width,Height);
 //  png.LoadFromFile(FileName);
 
 
@@ -2007,8 +1987,6 @@ var
   VShaderText: String;
   VShaderLength: Integer;
 begin
- Result:=-1;
-
  if FileExists(FragmentShaderFileName) then
   if FileExists(VertexShaderFileName) then
    begin
@@ -2058,7 +2036,7 @@ begin
 end;
 
 function TGLEngine.ShaderGetUniform(Shader: Integer;
-  uniform: PAnsiChar): GLuint;
+  uniform: PChar): GLuint;
 begin
  Result := 0;
  if not GL_ARB_shading_language_100 then exit;
@@ -2162,9 +2140,9 @@ begin
 end;
 {cain::}
 
-Procedure myVertex(outVertex:PVector3d); stdcall;
+Procedure myVertex(outVertex:TVector3d); stdcall;
  begin
-  messagebox(0,PChar(FloatToStr(outVertex^[0])),'test',0);
+  messagebox(0,PChar(FloatToStr(outVertex[0])),'test',0);
  end;
 
 procedure TGLEngine.Tesselate(var inVertexArray,
@@ -2172,7 +2150,7 @@ procedure TGLEngine.Tesselate(var inVertexArray,
 var
  tobj : pGLUtesselator;
  inv,outv : array of TVector3d;
- i:integer;
+ i,k:integer;
 begin
   tobj := gluNewTess();
   SetLength( inv, Length( inVertexArray ) );
@@ -2189,11 +2167,14 @@ begin
  gluTessCallback( tobj, GLU_TESS_VERTEX, @myVertex );
  gluTessCallback( tobj, GLU_TESS_END, nil );
 
-   gluTessBeginPolygon(tobj, nil);
+   gluTessBeginPolygon(tobj, 0);
       gluTessBeginContour(tobj);
 
       For i:=0 to High( inVertexArray )  do
+      begin
+       k:=i;
        gluTessVertex(tobj, inv[ i ], @inv[ i ] );
+      end;
 
       gluTessEndContour(tobj);
    gluTessEndPolygon(tobj);
@@ -2209,6 +2190,7 @@ end;
 procedure TGLEngine.PolygonFromArray(x, y, AngleRotate: single;
   n: array of TGLPoint);
 var
+ v : array of TVector3d;
  i:integer;
 begin
 glPushMatrix();
@@ -2282,6 +2264,7 @@ end;
 procedure TGLEngine._ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
 var
   LPixels: array of Byte;
+  LLine: PByteArray;
   Index: Integer;
   p1, p2: pointer;
 begin
@@ -2323,7 +2306,6 @@ var
   // used for loading from resource
   ResStream : TResourceStream;
 begin
-  result :=False;
   if LoadFromResource then // Load from resource
   begin
     try
@@ -2471,12 +2453,12 @@ begin
 end;
 
 function TVBOPrimitive.IsExtensionSupported(
-  szTargetExtension: AnsiString): boolean;
+  szTargetExtension: string): boolean;
 var
-  pszExtensions: AnsiString;
+  pszExtensions: string;
   pszWhere: integer;
 begin
-  pszWhere := Pos(AnsiString(' '),szTargetExtension);
+  pszWhere := Pos(' ',szTargetExtension);
   if (pszWhere <> 0) or (szTargetExtension = '') then
     begin
     Result := false;
