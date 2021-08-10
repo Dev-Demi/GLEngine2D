@@ -11,9 +11,11 @@ type
     Panel1: TPanel;
     Button1: TButton;
     Timer1: TTimer;
+    Panel2: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
   public
@@ -36,6 +38,12 @@ begin
  GLE.LoadImage(ExtractFilePath(Application.ExeName)+'01.png',Im1,false);
  GLE.LoadImage(ExtractFilePath(Application.ExeName)+'02.png',Im2,false);
  d:=0; dx:=0.01;
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+ if GLE.dcvis<>0 then
+  gle.Resize(panel1.ClientWidth,panel1.ClientHeight);
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);

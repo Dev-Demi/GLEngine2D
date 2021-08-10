@@ -1,0 +1,152 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls,GLEngine;
+
+type
+  TForm1 = class(TForm)
+    Timer1: TTimer;
+    Panel1: TPanel;
+    Memo1: TMemo;
+    Button1: TButton;
+    Edit1: TEdit;
+    procedure Timer1Timer(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure Edit1KeyPress(Sender: TObject; var Key: Char);
+    procedure FormDestroy(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+  GLE:TGLEngine=nil;
+  Im,LIm:Cardinal;
+  nx:single;
+  lx,ly:integer;
+  a:TList;
+  STRGl:String;
+  CharGl:Char;
+  StrX:integer=50;
+  CharTime:Integer=20;
+  Chart:Integer;
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+var
+ i:integer;
+ p:^TPoint;
+begin
+ new(p);
+ p^.X:=lx;p^.Y:=ly;
+ a.Add(p);
+ If a.Count>30 then
+ begin
+  p:=a.First;
+  dispose(p);
+  a.Delete(0);
+ end;
+ GLE.BeginRender(true);
+ GLE.AntiAlias(true);
+ GLE.SetColor(1,0,0,1);
+ For i:=0 to memo1.Lines.Count-1 do
+  GLE.TextOut(10,12*i+nx,memo1.Lines[i]);
+
+ GLE.SwichBlendMode(bmAdd);
+ For i:=0 to a.Count-1 do
+  begin
+   p:=a.Items[i];
+   GLE.SetColor(1-i/(a.Count-1),0.5*i/(a.Count-1),0.5*i/(a.Count-1),(i/(a.Count-1))/3);
+   GLE.DrawImage(p^.X,p^.y,35,35,0,true,false,Lim);
+  end;
+ GLE.SetColor(1,1,1,1);
+ GLE.SwichBlendMode(bmNormal);
+ GLE.DrawImage(0,0,Panel1.ClientWidth,Panel1.ClientHeight,0,false,false,im);
+
+ GLE.SetColor(0,0,1,1);
+ GLE.Bar(7,38,200,55);
+ GLE.SetColor(0,0,0,1);
+ GLE.Bar(8,39,199,54);
+ GLE.SetColor(1,1,1,1);
+
+ GLE.TextOut(10,50,STRGl);
+
+ GLE.SetColor(1,Chart/20,Chart/20,Chart/20); 
+ If Chart<CharTime then
+ begin
+  Chart:=Chart+1;
+  GLE.TextOut(StrX+10,50-(CharTime-Chart),CharGl);
+ end;
+
+ if Chart=CharTime then
+ begin
+  Chart:=Chart+1;
+  STRGl:=STRGl+CharGl;
+  StrX:=Length( STRGl)*7;
+ end;
+
+ GLE.FinishRender;
+ nx:=nx-1;
+ if nx< -memo1.Lines.Count*12 then
+  nx:=panel1.ClientHeight;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+ GLE:=TGLEngine.Create;
+ a:=TList.Create;
+ GLE.VisualInit(GetDC(Panel1.Handle),Panel1.ClientWidth,Panel1.ClientHeight,2);
+ GLE.LoadImage(ExtractFilePath(Application.ExeName)+'fade.tga',Im,false);
+ GLE.LoadImage(ExtractFilePath(Application.ExeName)+'star.tga',LIm,false);
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+ nx:=panel1.ClientHeight;
+ Panel1.Cursor:=crNone;
+ timer1.Enabled:=not Timer1.Enabled;
+end;
+
+procedure TForm1.Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+ lx:=x;ly:=y;
+end;
+
+procedure TForm1.Edit1KeyPress(Sender: TObject; var Key: Char);
+begin
+ if Chart<CharTime then
+  STRGl:=STRGl+CharGl;
+
+ if key=#8 then
+ begin
+  if Chart<CharTime then
+   STRGl:=STRGl+CharGl;
+  delete(STRGl,Length(STRGl),1);
+  Chart:=CharTime+1;
+ end
+ else
+ begin
+  StrX:=Length( STRGl)*7;
+  CharGl:=key;
+  Chart:=0;
+ end;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+ GLE.VisualDone;
+ GLE.Free;
+end;
+
+end.

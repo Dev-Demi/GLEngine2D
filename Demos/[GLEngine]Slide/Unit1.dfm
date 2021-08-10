@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 192
   Top = 127
-  Width = 749
-  Height = 560
   Caption = 'Form1'
+  ClientHeight = 522
+  ClientWidth = 733
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,24 +12,41 @@ object Form1: TForm1
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel
-    Left = 8
-    Top = 16
-    Width = 713
-    Height = 465
+    Left = 0
+    Top = 0
+    Width = 733
+    Height = 481
+    Align = alClient
     Caption = 'Panel1'
     TabOrder = 0
+    ExplicitLeft = 8
+    ExplicitTop = 16
+    ExplicitWidth = 713
+    ExplicitHeight = 465
   end
-  object Button1: TButton
-    Left = 8
-    Top = 488
-    Width = 75
-    Height = 25
-    Caption = 'Button1'
+  object Panel2: TPanel
+    Left = 0
+    Top = 481
+    Width = 733
+    Height = 41
+    Align = alBottom
     TabOrder = 1
-    OnClick = Button1Click
+    ExplicitLeft = 408
+    ExplicitTop = 504
+    ExplicitWidth = 185
+    object Button1: TButton
+      Left = 8
+      Top = 6
+      Width = 75
+      Height = 25
+      Caption = 'Start'
+      TabOrder = 0
+      OnClick = Button1Click
+    end
   end
   object Timer1: TTimer
     Enabled = False

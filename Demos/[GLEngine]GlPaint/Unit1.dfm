@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 417
   Top = 130
-  Width = 880
-  Height = 676
   Caption = 'Form1'
+  ClientHeight = 638
+  ClientWidth = 864
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,6 +13,7 @@ object Form1: TForm1
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel

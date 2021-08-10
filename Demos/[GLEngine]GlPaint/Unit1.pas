@@ -19,6 +19,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
   public
@@ -71,6 +72,12 @@ begin
  Gle.FreeImage(pod);
  Gle.FreeImage(CreateTex);
  Gle.Free;
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+if GLE.dcvis<>0 then
+ gle.Resize(panel1.ClientWidth,panel1.ClientHeight);
 end;
 
 procedure TForm1.Panel1MouseDown(Sender: TObject; Button: TMouseButton;

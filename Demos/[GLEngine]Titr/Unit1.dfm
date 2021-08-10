@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 309
   Top = 283
-  Width = 760
-  Height = 646
   Caption = 'Form1'
+  ClientHeight = 608
+  ClientWidth = 733
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,18 +13,27 @@ object Form1: TForm1
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
+  object Label1: TLabel
+    Left = 551
+    Top = 503
+    Width = 71
+    Height = 13
+    Caption = 'Type text here:'
+  end
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 744
+    Width = 733
     Height = 465
     Cursor = crCross
     Align = alTop
     Caption = 'Panel1'
     TabOrder = 0
     OnMouseMove = Panel1MouseMove
+    ExplicitWidth = 744
   end
   object Memo1: TMemo
     Left = 8
@@ -123,8 +132,8 @@ object Form1: TForm1
     OnClick = Button1Click
   end
   object Edit1: TEdit
-    Left = 552
-    Top = 504
+    Left = 551
+    Top = 522
     Width = 169
     Height = 21
     TabOrder = 3

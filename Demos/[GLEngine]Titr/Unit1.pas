@@ -13,6 +13,7 @@ type
     Memo1: TMemo;
     Button1: TButton;
     Edit1: TEdit;
+    Label1: TLabel;
     procedure Timer1Timer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -20,6 +21,7 @@ type
       Y: Integer);
     procedure Edit1KeyPress(Sender: TObject; var Key: Char);
     procedure FormDestroy(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
   public
@@ -147,6 +149,12 @@ procedure TForm1.FormDestroy(Sender: TObject);
 begin
  GLE.VisualDone;
  GLE.Free;
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+ if GLE.dcvis<>0 then
+  gle.Resize(panel1.ClientWidth,panel1.ClientHeight);
 end;
 
 end.

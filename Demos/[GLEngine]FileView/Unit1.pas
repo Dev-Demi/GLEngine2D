@@ -113,6 +113,9 @@ begin
  FileView.MaxH:=60;
 // FileView.GotoFolder('c:\');
  timer1.Enabled:=true;
+ Button2.Enabled:=true;
+ Button3.Enabled:=true;
+
 end;
 
 { TIconCollection }

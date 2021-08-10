@@ -19,6 +19,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure Panel1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
   public
@@ -62,6 +63,13 @@ begin
   end;
 
  GLE.FinishRender;
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+if GLE.dcvis<>0 then
+ gle.Resize(panel.ClientWidth,panel.ClientHeight);
+ Timer1Timer(nil);
 end;
 
 procedure TForm1.Panel1MouseDown(Sender: TObject; Button: TMouseButton;

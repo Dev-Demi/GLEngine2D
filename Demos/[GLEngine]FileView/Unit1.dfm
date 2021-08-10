@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 192
   Top = 127
-  Width = 844
-  Height = 640
   Caption = 'Form1'
+  ClientHeight = 602
+  ClientWidth = 828
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -55,6 +55,7 @@ object Form1: TForm1
     Height = 25
     Anchors = [akTop, akRight]
     Caption = #1055#1077#1088#1077#1081#1090#1080
+    Enabled = False
     TabOrder = 3
     OnClick = Button2Click
   end
@@ -65,6 +66,7 @@ object Form1: TForm1
     Height = 25
     Anchors = [akTop, akRight]
     Caption = #1085#1072#1079#1072#1076
+    Enabled = False
     TabOrder = 4
     OnClick = Button3Click
   end
