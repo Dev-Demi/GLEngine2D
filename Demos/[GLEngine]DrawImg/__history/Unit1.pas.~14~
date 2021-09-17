@@ -1,0 +1,111 @@
+unit Unit1;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls,GLEngine, Vcl.StdCtrls;
+
+type
+  TForm1 = class(TForm)
+    Panel1: TPanel;
+    Timer1: TTimer;
+    Panel2: TPanel;
+    StartButton: TButton;
+    procedure FormDestroy(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+    procedure StartButtonClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+  GLE:TGLEngine;
+  CreateTex,PngImg,JpgImg:Cardinal;
+   size:integer;
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+ if GLE<>nil  then
+  if GLE.dcvis<>0 then
+   gle.Resize(panel1.ClientWidth,panel1.ClientHeight);
+end;
+
+procedure TForm1.StartButtonClick(Sender: TObject);
+begin
+  size:=256;
+ GLE:=TGLEngine.Create;
+ //
+ //             Инициализируем графику
+ //
+ //             на чём будем рисовать | ширина полотна     | высота полотна      | качество сглаживания
+ GLE.VisualInit(GetDC(Panel1.Handle)  , Panel1.ClientWidth , Panel1.ClientHeight , 0);
+// GLE.Resize(Panel1.ClientWidth,Panel1.ClientHeight);
+ GLE.LoadImage(ExtractFilePath(Application.ExeName)+'png.png',PngImg,false);
+ GLE.LoadImage(ExtractFilePath(Application.ExeName)+'jpg.jpg',JpgImg,false);
+ CreateTex:=GLE.CreateImage(size,size);
+
+
+ gle.BeginRenderToTex(CreateTex,size,size);
+   Gle.SetColor(1,0,0,1);
+   Gle.Rectangle(1,1,size,size);
+
+   Gle.Rectangle(10,10,20,20);
+
+   Gle.Rectangle(10,30,20,40);
+
+  Gle.Rectangle(30,30,40,40);
+
+   Gle.SetColor(1,1,1,1);
+
+   Gle.DrawImage(10,60,50,50,0,false,false,JpgImg);
+   Gle.DrawImage(100,60,50,50,0,true,false,JpgImg);
+   Gle.DrawImage(10,160,50,50,0,false,false,PngImg);
+   Gle.DrawImage(100,160,50,50,0,true,false,PngImg);
+ gle.EndRenderToTex;
+
+ timer1.Enabled:=true;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+ Gle.FreeImage(PngImg);
+ Gle.FreeImage(JpgImg);
+ Gle.FreeImage(CreateTex);
+ Gle.Free;
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+ Gle.BeginRender(true);
+
+ Gle.DrawImage(500,60, size,size,0,false,false,CreateTex);
+ Gle.SetColor(1,0,0,1);
+ Gle.Rectangle(500,60,500+size,60+size);
+ Gle.SetColor(1,1,1,1);
+ gle.Point(500,60);
+ Gle.DrawImage(500,360,size,size,0,true, false,CreateTex);
+ gle.Point(500,360);
+
+ Gle.SetColor(1,1,1,1);
+ gle.PointSize(3);
+ Gle.DrawImage(10,60,50,50,0,false,false,JpgImg);
+ gle.Point(10,60);
+ Gle.DrawImage(100,60,50,50,0,true,false,JpgImg);
+ gle.Point(100,60);
+ Gle.DrawImage(10,160,50,50,0,false,false,PngImg);
+ gle.Point(10,160);
+ Gle.DrawImage(100,160,50,50,0,true,false,PngImg);
+ gle.Point(100,160);
+
+ Gle.FinishRender;
+end;
+
+end.

@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.456,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.368,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.183,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.227,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.674,C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Project1.dproj=F:\GitHub\GLEngine2D\Demos\[GLEngine]DrawImg\DrawImg.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.884,C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.dfm=F:\GitHub\GLEngine2D\Demos\[GLEngine]DrawImg\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.768,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.479,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.605,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.534,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.637,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.459,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.803,=C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.884,C:\Users\Alexandr\Documents\Embarcadero\Studio\Projects\Unit1.pas=F:\GitHub\GLEngine2D\Demos\[GLEngine]DrawImg\Unit1.pas</Transaction>
+  </Transactions>
+	<ActiveMobileDevice>
+		<NoProfile iOSSimulator="iPhone5"/>
+	</ActiveMobileDevice>
+</BorlandProject>

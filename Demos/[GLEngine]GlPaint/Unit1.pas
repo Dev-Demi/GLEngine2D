@@ -109,31 +109,38 @@ if down then
    5:   gle.SwichBlendMode(bmNormal);
    6:   gle.SwichBlendMode($0300,$0307);
   end;
-    gle.BeginRenderToTex(CreateTex,Panel1.ClientWidth,Panel1.ClientHeight);
-     gle.SetColor(Form2.RColor.Position/255,Form2.GColor.Position/255,Form2.BColor.Position/255,Form2.AColor.Position/255);
-     gle.DrawImage(x,y,Form2.BrushSize.Position,Form2.BrushSize.Position,0,true,false,MyBrush);
+    GLE.BeginRenderToTex(CreateTex, Panel1.ClientWidth, Panel1.ClientHeight);
+    GLE.SetColor(Form2.RColor.Position / 255, Form2.GColor.Position / 255,
+      Form2.BColor.Position / 255, Form2.AColor.Position / 255);
 
-    gle.EndRenderToTex;
-     gle.SwichBlendMode(bmNormal);
-  Gle.SetColor(1,1,1,1);
- Gle.DrawImage(0,0,Panel1.ClientWidth,Panel1.ClientHeight,0,false,false,pod);
- Gle.DrawImage(0,0,Panel1.ClientWidth,Panel1.ClientHeight,0,false,false,CreateTex);
-   gle.FinishRender;
- //    form1.Timer1Timer(nil);
-//     form1.Caption:=form1.Caption+'!';
+    GLE.DrawImage(X, Y, Form2.BrushSize.Position, Form2.BrushSize.Position, 0,
+      true, false, Mybrush);
+
+    GLE.EndRenderToTex;
+
+    GLE.SwichBlendMode(bmNormal);
+    GLE.SetColor(1, 1, 1, 1);
+    GLE.DrawImage(0, 0, Panel1.ClientWidth, Panel1.ClientHeight, 0, false,
+      false, pod);
+    GLE.DrawImage(0, 0, Panel1.ClientWidth, Panel1.ClientHeight, 0, false,
+      false, CreateTex);
+    GLE.FinishRender;
   end
   else
    begin
-      Gle.BeginRender(false);
+     GLE.BeginRender(false);
 
-  Gle.SetColor(1,1,1,1);
- Gle.DrawImage(0,0,Panel1.ClientWidth,Panel1.ClientHeight,0,false,false,pod);
- Gle.DrawImage(0,0,Panel1.ClientWidth,Panel1.ClientHeight,0,false,false,CreateTex);
- gle.SetColor(0.5,0.5,0.5,0.8);
- gle.SetFill(glLine);
- gle.Ellipse(x,y,Form2.BrushSize.Position/2,Form2.BrushSize.Position/2,0.01,0,32);
-  gle.SetFill(glFill);
-   gle.FinishRender;
+     GLE.SetColor(1, 1, 1, 1);
+     GLE.DrawImage(0, 0, Panel1.ClientWidth, Panel1.ClientHeight, 0, false,
+       false, pod);
+     GLE.DrawImage(0, 0, Panel1.ClientWidth, Panel1.ClientHeight, 0, false,
+       false, CreateTex);
+     GLE.SetColor(0.5, 0.5, 0.5, 0.8);
+     GLE.SetFill(glLine);
+     GLE.Ellipse(X, Y, Form2.BrushSize.Position / 2, Form2.BrushSize.Position /
+       2, 0.01, 0, 32);
+     GLE.SetFill(glFill);
+     GLE.FinishRender;
    end;
 end;
 

@@ -111,7 +111,7 @@ Type
    FrameBuffer: Cardinal;
    StartDrawTime,EndDrawTime,TimeDraw:Int64;
    Font: HFONT;
-   Procedure DrawQuad(pX, pY, pZ, pWidth, pHeight : Single; Center,Tile:boolean);
+   Procedure DrawQuad( pWidth, pHeight : Single; Center,Tile:boolean);
    procedure GetPixelFormat(AASamples : Integer );
    procedure SetDCPixelFormat (dc : HDC);
 
@@ -921,7 +921,7 @@ else
 glEnd;
 end;    }
 
-procedure TGLEngine.DrawQuad(pX, pY, pZ, pWidth, pHeight : Single; Center,Tile:boolean);
+procedure TGLEngine.DrawQuad( pWidth, pHeight : Single; Center,Tile:boolean);
 var
  dx,dy:single;
  Width,Height:integer;
@@ -938,43 +938,58 @@ begin
  glBegin(GL_QUADS);
  if center then
  begin
-  glTexCoord2f(0, 0);  glVertex3f(-pWidth/2, -pHeight/2, -pZ);
-  glTexCoord2f(dx,0);  glVertex3f( pWidth/2, -pHeight/2, -pZ);
-  glTexCoord2f(dx,dy); glVertex3f( pWidth/2, pHeight/2,  -pZ);
-  glTexCoord2f(0, dy); glVertex3f(-pWidth/2, pHeight/2,  -pZ);
+  if not toFrameBufer then
+   begin
+    glTexCoord2f(0, 0);  glVertex3f(-pWidth/2, -pHeight/2, 0);
+    glTexCoord2f(dx,0);  glVertex3f( pWidth/2, -pHeight/2, 0);
+    glTexCoord2f(dx,dy); glVertex3f( pWidth/2, pHeight/2,  0);
+    glTexCoord2f(0, dy); glVertex3f(-pWidth/2, pHeight/2,  0);
+   end
+  else
+   begin
+    glTexCoord2f(0, 0);  glVertex3f(-pWidth/2, -pHeight/2, 0);
+    glTexCoord2f(dx,0);  glVertex3f( pWidth/2, -pHeight/2, 0);
+    glTexCoord2f(dx,dy); glVertex3f( pWidth/2, pHeight/2, 0);
+    glTexCoord2f(0, dy); glVertex3f(-pWidth/2, pHeight/2, 0);
+   end;
  end
 else
  begin
  if not toFrameBufer then
   begin
-   glTexCoord2f(0,0);  glVertex3f(0, 0, -pZ);
-   glTexCoord2f(dx,0);  glVertex3f(pWidth, 0, -pZ);
-   glTexCoord2f(dx,-dy); glVertex3f(pWidth, pHeight, -pZ);
-   glTexCoord2f(0,-dy); glVertex3f(0,pHeight, -pZ);
+   glTexCoord2f(0, 0);  glVertex3f(0, 0, 0);
+   glTexCoord2f(dx,0);  glVertex3f(pWidth, 0, 0);
+   glTexCoord2f(dx,dy); glVertex3f(pWidth, pHeight, 0);
+   glTexCoord2f(0, dy); glVertex3f(0,pHeight, 0);
   end
   else
   begin
-   glTexCoord2f(0,0); glVertex3f(0, 0, -pZ);
-   glTexCoord2f(dx,0); glVertex3f(pWidth, 0, -pZ);
-   glTexCoord2f(dx,dy); glVertex3f(pWidth, pHeight, -pZ);
-   glTexCoord2f(0,dy); glVertex3f(0,pHeight, -pZ);
+   glTexCoord2f(0, 0);   glVertex3f(0, 0, 0);
+   glTexCoord2f(dx,0);   glVertex3f(pWidth, 0, 0);
+   glTexCoord2f(dx,dy); glVertex3f(pWidth, pHeight, 0);
+   glTexCoord2f(0, dy); glVertex3f(0,pHeight, 0);
   end;
  end;
-glEnd;
+ glEnd;
 end;
 
 procedure TGLEngine.DrawImage(x,y,w,h,Angle:single;Center,tile:boolean;Image:Cardinal);
 begin
- glMatrixMode(GL_TEXTURE);
+ {glMatrixMode(GL_TEXTURE);
   glLoadIdentity();
- glMatrixMode(GL_MODELVIEW);
+ glMatrixMode(GL_MODELVIEW); }
 
  glBindTexture(GL_TEXTURE_2D, Image);
  glEnable(GL_TEXTURE_2D);
  glPushMatrix();
+{  if not toFrameBufer then
+   glTranslated(x,y,0)
+  else
+   glTranslated(x,256-y,0);}
+
   glTranslated(x,y,0);
   glRotatef(Angle, 0,0,1);
-  DrawQuad(x,y,0, w,h,Center,tile);
+  DrawQuad(w,h,Center,tile);
  glPopMatrix();
  glDisable(GL_TEXTURE_2D);
 end;
@@ -997,7 +1012,7 @@ begin
  glPushMatrix();
   glTranslated(x,y,0);
   glRotatef(Angle, 0,0,1);
-  DrawQuad(x,y,0, w,h,Center,tile);
+  DrawQuad(w,h,Center,tile);
  glPopMatrix();
 end;
 
@@ -1918,7 +1933,7 @@ end;                   }
 
 procedure TGLEngine.BeginRenderToTex(Image: Cardinal; w,h:glint);
 begin
-  glEnable(GL_TEXTURE_2D);
+{  glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, Image);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1930,19 +1945,55 @@ begin
     GL_TEXTURE_2D, Image, 0);
   glPushAttrib(GL_VIEWPORT_BIT);
   glViewport(0, 0, w, h);
+
   glPushMatrix;
   glLoadIdentity;
    toFrameBufer:=true;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);    }
+
+ glPushMatrix;
+ glViewport(0, 0, w, h);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, 0, h, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, Image);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+    GL_UNSIGNED_BYTE, nil);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FrameBuffer);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, Image, 0);
+    glDisable(GL_TEXTURE_2D);
 end;
 
 procedure TGLEngine.EndRenderToTex;
 begin
- glPopMatrix;
+{ glPopMatrix;
  glPopAttrib;
  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
  toFrameBufer:=false;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);}
+ glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, 0, 0);
+ glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+ toFrameBufer:=false;
+ glBindTexture(GL_TEXTURE_2D, 0);
+
+ glViewport(0, 0, w, h);
+
+ glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, h, 0, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+ glPopMatrix;
+
+
 end;
 
 procedure TGLEngine.Rectangle(x1, y1, x2, y2: single);
@@ -1971,7 +2022,7 @@ begin
 // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 // glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
  glGenerateMipmap(textureId);
- glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
+ glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0,
              GL_RGBA, GL_UNSIGNED_BYTE, nil);
  glBindTexture(GL_TEXTURE_2D, 0);
   result :=textureId;
