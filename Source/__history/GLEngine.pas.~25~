@@ -160,7 +160,7 @@ Type
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
-     Procedure Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+     Procedure Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
      procedure PolygonTexture(x,y,AngleRotate,TexAngle:single;Trans, Scale: TGLPoint; vertex,tex: array of TGLPoint; image:Cardinal);
      procedure PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint ); // Ñïàñèáî cain
      Procedure Tesselate (var inVertexArray,outVertexArray: array of TGLPoint);
@@ -982,10 +982,12 @@ begin
  glBindTexture(GL_TEXTURE_2D, Image);
  glEnable(GL_TEXTURE_2D);
  glPushMatrix();
-//  if not toFrameBufer then
-   glTranslated(x,y,0);
-//  else
-//   glTranslated(x,256-y,0);
+{  if not toFrameBufer then
+   glTranslated(x,y,0)
+  else
+   glTranslated(x,256-y,0);}
+
+  glTranslated(x,y,0);
   glRotatef(Angle, 0,0,1);
   DrawQuad(w,h,Center,tile);
  glPopMatrix();
@@ -1273,6 +1275,8 @@ begin
 //   glRotatef(Angle, 0,0,1);
 //  glScalef (15.0, -15.0, 1.0);                      // Uloží souèasný stav display listù
 ////////////////////////
+
+//  glTranslatef (10,-1,1);
   glListBase(FontHandle);
   glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslí display listy
   glPopMatrix();
@@ -1931,7 +1935,7 @@ end;                   }
 
 procedure TGLEngine.BeginRenderToTex(Image: Cardinal; w,h:glint);
 begin
-  glEnable(GL_TEXTURE_2D);
+{  glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, Image);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1943,28 +1947,55 @@ begin
     GL_TEXTURE_2D, Image, 0);
   glPushAttrib(GL_VIEWPORT_BIT);
   glViewport(0, 0, w, h);
- //////////
-
-  // glMatrixMode(GL_PROJECTION);
-  // glLoadIdentity();
-  // glOrtho(0.0, 256.0, 0.0, 256.0, -1.0, 1.0);
-  // glMatrixMode(GL_MODELVIEW);
-  // glLoadIdentity();
-//
 
   glPushMatrix;
   glLoadIdentity;
    toFrameBufer:=true;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);    }
+
+ glPushMatrix;
+ glViewport(0, 0, w, h);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, 0, h, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, Image);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+    GL_UNSIGNED_BYTE, nil);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FrameBuffer);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, Image, 0);
+    glDisable(GL_TEXTURE_2D);
 end;
 
 procedure TGLEngine.EndRenderToTex;
 begin
- glPopMatrix;
+{ glPopMatrix;
  glPopAttrib;
  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
  toFrameBufer:=false;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);}
+ glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, 0, 0);
+ glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+ toFrameBufer:=false;
+ glBindTexture(GL_TEXTURE_2D, 0);
+
+ glViewport(0, 0, w, h);
+
+ glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, h, 0, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+ glPopMatrix;
+
+
 end;
 
 procedure TGLEngine.Rectangle(x1, y1, x2, y2: single);
@@ -2097,14 +2128,14 @@ begin
  VBOSprite.add(x,y,w,h);
 end;
 
-procedure TGLEngine.Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+procedure TGLEngine.Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
 var
  i:integer;
 begin
 glPushMatrix();
 
  glMatrixMode(GL_TEXTURE);
- glRotatef(TesAngleRotate,0,0,1);
+ glRotatef(TextureAngleRotate,0,0,1);
  glMatrixMode(GL_MODELVIEW);
 
  glTranslated(x,y,0);

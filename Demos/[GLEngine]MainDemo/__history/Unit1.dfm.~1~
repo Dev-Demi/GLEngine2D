@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 624
   Top = 208
+  Width = 775
+  Height = 556
   Caption = 'Form1'
-  ClientHeight = 518
-  ClientWidth = 759
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -73,6 +73,7 @@ object Form1: TForm1
     Height = 21
     Style = csDropDownList
     Anchors = [akLeft, akBottom]
+    ItemHeight = 13
     ItemIndex = 2
     TabOrder = 4
     Text = '4'

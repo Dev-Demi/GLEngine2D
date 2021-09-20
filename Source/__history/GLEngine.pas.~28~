@@ -96,7 +96,6 @@ Type
 
 
    VBOSprite:TVBOSprite;
-   pfd:TPixelFormatDescriptor;
    AAFormat:Integer;
    xl,yl:single;
    w,h:word;
@@ -160,7 +159,7 @@ Type
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
-     Procedure Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+     Procedure Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
      procedure PolygonTexture(x,y,AngleRotate,TexAngle:single;Trans, Scale: TGLPoint; vertex,tex: array of TGLPoint; image:Cardinal);
      procedure PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint ); // Ñïàñèáî cain
      Procedure Tesselate (var inVertexArray,outVertexArray: array of TGLPoint);
@@ -1275,6 +1274,8 @@ begin
 //   glRotatef(Angle, 0,0,1);
 //  glScalef (15.0, -15.0, 1.0);                      // Uloží souèasný stav display listù
 ////////////////////////
+
+//  glTranslatef (10,-1,1);
   glListBase(FontHandle);
   glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslí display listy
   glPopMatrix();
@@ -1933,7 +1934,7 @@ end;                   }
 
 procedure TGLEngine.BeginRenderToTex(Image: Cardinal; w,h:glint);
 begin
-  glEnable(GL_TEXTURE_2D);
+{  glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, Image);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1944,31 +1945,56 @@ begin
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
     GL_TEXTURE_2D, Image, 0);
   glPushAttrib(GL_VIEWPORT_BIT);
-  glViewport(0, 0, w*2, h);
-
- //////////
-
-
-  // glMatrixMode(GL_PROJECTION);
-  // glLoadIdentity();
-  // glOrtho(0.0, 256.0, 0.0, 256.0, -1.0, 1.0);
-  // glMatrixMode(GL_MODELVIEW);
-  // glLoadIdentity();
-//
+  glViewport(0, 0, w, h);
 
   glPushMatrix;
   glLoadIdentity;
    toFrameBufer:=true;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);    }
+
+ glPushMatrix;
+ glViewport(0, 0, w, h);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, 0, h, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, Image);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+    GL_UNSIGNED_BYTE, nil);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FrameBuffer);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, Image, 0);
+    glDisable(GL_TEXTURE_2D);
 end;
 
 procedure TGLEngine.EndRenderToTex;
 begin
- glPopMatrix;
+{ glPopMatrix;
  glPopAttrib;
  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
  toFrameBufer:=false;
- glDisable(GL_TEXTURE_2D);
+ glDisable(GL_TEXTURE_2D);}
+ glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+    GL_TEXTURE_2D, 0, 0);
+ glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+ toFrameBufer:=false;
+ glBindTexture(GL_TEXTURE_2D, 0);
+
+ glViewport(0, 0, w, h);
+
+ glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  glOrtho (0, w, h, 0, -100,100 );
+  glMatrixMode(GL_MODELVIEW);
+ glPopMatrix;
+
+
 end;
 
 procedure TGLEngine.Rectangle(x1, y1, x2, y2: single);
@@ -2101,14 +2127,14 @@ begin
  VBOSprite.add(x,y,w,h);
 end;
 
-procedure TGLEngine.Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+procedure TGLEngine.Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
 var
  i:integer;
 begin
 glPushMatrix();
 
  glMatrixMode(GL_TEXTURE);
- glRotatef(TesAngleRotate,0,0,1);
+ glRotatef(TextureAngleRotate,0,0,1);
  glMatrixMode(GL_MODELVIEW);
 
  glTranslated(x,y,0);
@@ -2183,7 +2209,7 @@ procedure TGLEngine.Tesselate(var inVertexArray,
 var
  tobj : pGLUtesselator;
  inv,outv : array of TVector3d;
- i,k:integer;
+ i:integer;
 begin
   tobj := gluNewTess();
   SetLength( inv, Length( inVertexArray ) );
@@ -2204,12 +2230,9 @@ begin
       gluTessBeginContour(tobj);
 
       For i:=0 to High( inVertexArray )  do
-      begin
-       k:=i;
        gluTessVertex(tobj, inv[ i ], @inv[ i ] );
-      end;
 
-      gluTessEndContour(tobj);
+    gluTessEndContour(tobj);
    gluTessEndPolygon(tobj);
 
    For i:=0 to High( inVertexArray )  do
@@ -2223,18 +2246,17 @@ end;
 procedure TGLEngine.PolygonFromArray(x, y, AngleRotate: single;
   n: array of TGLPoint);
 var
- v : array of TVector3d;
  i:integer;
 begin
-glPushMatrix();
+ glPushMatrix();
  glTranslated(x,y,0);
  glRotatef(AngleRotate, 0,0,1);
-//  glBegin(GL_POLYGON);
+ //  glBegin(GL_POLYGON);
  glBegin(GL_TRIANGLE_FAN );
   For i:=0 to High(n)  do
    glVertex3d(n[i].x,n[i].y,0);
   glEnd();
-glPopMatrix();
+ glPopMatrix();
 end;
 
 procedure TGLEngine.PolygonTexture(x, y, AngleRotate,TexAngle: single; Trans, Scale: TGLPoint; vertex,
@@ -2297,7 +2319,6 @@ end;
 procedure TGLEngine._ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
 var
   LPixels: array of Byte;
-  LLine: PByteArray;
   Index: Integer;
   p1, p2: pointer;
 begin

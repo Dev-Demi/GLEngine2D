@@ -96,7 +96,6 @@ Type
 
 
    VBOSprite:TVBOSprite;
-   pfd:TPixelFormatDescriptor;
    AAFormat:Integer;
    xl,yl:single;
    w,h:word;
@@ -160,7 +159,7 @@ Type
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
-     Procedure Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+     Procedure Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
      procedure PolygonTexture(x,y,AngleRotate,TexAngle:single;Trans, Scale: TGLPoint; vertex,tex: array of TGLPoint; image:Cardinal);
      procedure PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint ); // Ñïàñèáî cain
      Procedure Tesselate (var inVertexArray,outVertexArray: array of TGLPoint);
@@ -1254,16 +1253,17 @@ end;
 
 procedure TGLEngine.KillFont;
 begin
-  glDeleteLists(FontHandle,255);                                 // Smaže všech 96 znakù (display listù)
+  glDeleteLists(FontHandle,257);                                 // Smaže všech 96 znakù (display listù)
   DeleteObject(font);
 end;
 
 procedure TGLEngine.TextOut(x,y:single; text:AnsiString; angle:single=0);
 begin
-  if text = '' then exit;                                 // Byl pøedán text?
+  if text = '' then exit;
 
   glPushAttrib(GL_LIST_BIT);
   glPushMatrix();
+
   glRasterPos2f(x,y);
 
 ////////////////////
@@ -1272,9 +1272,11 @@ begin
 // glEnable(GL_POLYGON_SMOOTH);
 
 //  glTranslatef(x, y, 0.0);
-//   glRotatef(Angle, 0,0,1);
+ //  glRotatef(Angle, 0,0,1);
 //  glScalef (15.0, -15.0, 1.0);                      // Uloží souèasný stav display listù
 ////////////////////////
+ //  glPixelZoom(1,10);
+//  glTranslatef (10,-1,1);
   glListBase(FontHandle);
   glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslí display listy
   glPopMatrix();
@@ -2126,14 +2128,14 @@ begin
  VBOSprite.add(x,y,w,h);
 end;
 
-procedure TGLEngine.Polygon(x,y,AngleRotate,TesAngleRotate:single; n: array of TGLPoint);
+procedure TGLEngine.Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
 var
  i:integer;
 begin
 glPushMatrix();
 
  glMatrixMode(GL_TEXTURE);
- glRotatef(TesAngleRotate,0,0,1);
+ glRotatef(TextureAngleRotate,0,0,1);
  glMatrixMode(GL_MODELVIEW);
 
  glTranslated(x,y,0);
@@ -2208,7 +2210,7 @@ procedure TGLEngine.Tesselate(var inVertexArray,
 var
  tobj : pGLUtesselator;
  inv,outv : array of TVector3d;
- i,k:integer;
+ i:integer;
 begin
   tobj := gluNewTess();
   SetLength( inv, Length( inVertexArray ) );
@@ -2229,12 +2231,9 @@ begin
       gluTessBeginContour(tobj);
 
       For i:=0 to High( inVertexArray )  do
-      begin
-       k:=i;
        gluTessVertex(tobj, inv[ i ], @inv[ i ] );
-      end;
 
-      gluTessEndContour(tobj);
+    gluTessEndContour(tobj);
    gluTessEndPolygon(tobj);
 
    For i:=0 to High( inVertexArray )  do
@@ -2248,18 +2247,17 @@ end;
 procedure TGLEngine.PolygonFromArray(x, y, AngleRotate: single;
   n: array of TGLPoint);
 var
- v : array of TVector3d;
  i:integer;
 begin
-glPushMatrix();
+ glPushMatrix();
  glTranslated(x,y,0);
  glRotatef(AngleRotate, 0,0,1);
-//  glBegin(GL_POLYGON);
+ //  glBegin(GL_POLYGON);
  glBegin(GL_TRIANGLE_FAN );
   For i:=0 to High(n)  do
    glVertex3d(n[i].x,n[i].y,0);
   glEnd();
-glPopMatrix();
+ glPopMatrix();
 end;
 
 procedure TGLEngine.PolygonTexture(x, y, AngleRotate,TexAngle: single; Trans, Scale: TGLPoint; vertex,
@@ -2322,7 +2320,6 @@ end;
 procedure TGLEngine._ScreenShot(var BMP: TBitMap;AWidth,AHeight:integer);
 var
   LPixels: array of Byte;
-  LLine: PByteArray;
   Index: Integer;
   p1, p2: pointer;
 begin
