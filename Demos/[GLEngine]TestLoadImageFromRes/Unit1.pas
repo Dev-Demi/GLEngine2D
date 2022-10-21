@@ -35,7 +35,9 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
  GLE:=TGLEngine.Create;
  GLE.VisualInit(GetDC(Panel1.Handle),Panel1.ClientWidth,Panel1.ClientHeight,2);
-  GLE.LoadImage('JpgImage_1',Im1,true);
+
+ // в наименовании ресурса первые три буквы должны отображать тип файла:  BMP JPG TGA PNG
+ GLE.LoadImage('JpgImage_1',Im1,true);
 
  d:=0; dx:=1;
 end;
