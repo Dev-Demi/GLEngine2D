@@ -79,7 +79,7 @@ Type
       Procedure Add;  virtual;abstract;
       Procedure Draw;
 
-      function IsExtensionSupported(szTargetExtension: string): boolean; 
+      function IsExtensionSupported(szTargetExtension: string): boolean;
     end;
 
   TVBOSprite = class(TVBOPrimitive)
@@ -273,7 +273,7 @@ begin
     GL_LINEAR                - BiLinear filtering
     GL_LINEAR_MIPMAP_NEAREST - Basic mipmapped texture
     GL_LINEAR_MIPMAP_LINEAR  - BiLinear Mipmapped texture
-  }  
+  }
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); { only first two can be used }
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); { all of the above can be used }
@@ -474,7 +474,8 @@ begin
   if LoadFromResource then // Load from resource
   begin
     try
-      ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), 'JPEG');
+    //  ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), RT_RCDATA);
+      ResStream := TResourceStream.Create(hInstance, PChar(Filename), RT_RCDATA);
       JPG.LoadFromStream(ResStream);
       ResStream.Free;
     except on
@@ -1139,15 +1140,33 @@ end;
 
 function TGLEngine.LoadImage(Filename: String; var Texture: Cardinal;
   LoadFromRes: Boolean): Boolean;
+var
+ ImageType:string;
 begin
- if copy(Uppercase(filename), length(filename)-3, 4) = '.BMP' then
-  LoadBMPTexture(Filename, Texture, LoadFromRes);
- if copy(Uppercase(filename), length(filename)-3, 4) = '.JPG' then
-  LoadJPGTexture(Filename, Texture, LoadFromRes);
- if copy(Uppercase(filename), length(filename)-3, 4) = '.TGA' then
-  LoadTGATexture(Filename, Texture, LoadFromRes);
- if copy(Uppercase(filename), length(filename)-3, 4) = '.PNG' then
-  LoadPNGTexture(Filename, Texture, LoadFromRes);
+
+ if not LoadFromRes then
+ begin
+  if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.BMP' then
+      LoadBMPTexture(Filename, Texture, LoadFromRes);
+    if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.JPG' then
+      LoadJPGTexture(Filename, Texture, LoadFromRes);
+    if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.TGA' then
+      LoadTGATexture(Filename, Texture, LoadFromRes);
+    if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.PNG' then
+      LoadPNGTexture(Filename, Texture, LoadFromRes);
+  End
+  else
+  begin
+     ImageType:=copy(Uppercase(Filename), 1, 3);
+    if ImageType = 'BMP' then
+      LoadBMPTexture(Filename, Texture, LoadFromRes);
+    if ImageType ='JPG' then
+      LoadJPGTexture(Filename, Texture, LoadFromRes);
+    if ImageType = 'TGA' then
+      LoadTGATexture(Filename, Texture, LoadFromRes);
+    if ImageType = 'PNG' then
+      LoadPNGTexture(Filename, Texture, LoadFromRes);
+  end;
 
 end;
 
@@ -1472,7 +1491,7 @@ begin
   DestroyWindow(hwnd);
   wglMakeCurrent(0, 0);
   wglDeleteContext(DC);
-end;  
+end;
 end;
 
 procedure TGLEngine.SetDCPixelFormat (dc : HDC);
@@ -2263,7 +2282,7 @@ end;
 procedure TGLEngine.PolygonTexture(x, y, AngleRotate,TexAngle: single; Trans, Scale: TGLPoint; vertex,
   tex: array of TGLPoint; image: Cardinal);
 var
- i:integer;  
+ i:integer;
 begin
 glPushMatrix();
 
@@ -2275,7 +2294,7 @@ glPushMatrix();
 
  glTranslated(0.5,0.5,0);
   glRotatef(TexAngle,0,0,1);
- glTranslated(-0.5,-0.5,0); 
+ glTranslated(-0.5,-0.5,0);
 
  glTranslated(Trans.x,Trans.y,0);
  glScalef(Scale.x,Scale.y,0);
@@ -2310,7 +2329,7 @@ end;
 
 procedure TGLEngine.ScreenShot(var BMP: TBitMap; AWidth, AHeight: integer);
 begin
- // ÒÓı‡ÌËÚ ‚ BMP !—À≈ƒ”ﬁŸ»…! Í‡‰! 
+ // ÒÓı‡ÌËÚ ‚ BMP !—À≈ƒ”ﬁŸ»…! Í‡‰!
  needScreenShot:=true;
  scs_BMP:=BMP;
  scs_AWidth:= AWidth;
