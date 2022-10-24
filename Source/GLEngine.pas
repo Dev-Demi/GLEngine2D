@@ -179,7 +179,14 @@ Type
   {+}Procedure SwichBlendMode(sfactor: TGLEnum; dfactor: TGLEnum); Overload;
   {+}Procedure SwichBlendMode(BlendMode:TGLBlendMode); Overload;
 
+
+
+///   <summary>
+///   <para>Load TBitMat image to texture.</para>
+///   <para>Загружает TBitMat изображение в текстуру.</para>
+///   </summary>
   {+}procedure AddBMPImage(Bmp:TBitMap;var Texture : Cardinal);
+
   {+}Function  CreateImage(w,h:integer):Cardinal;
   {+}function  LoadImage(Filename: String; var Texture : Cardinal; LoadFromRes : Boolean) : Boolean;
   {+}Procedure DrawImage(x,y,w,h,Angle:single;Center,tile:boolean;Image:Cardinal);
@@ -423,11 +430,27 @@ var
   Data : Array of byte;
   W, Width,il : Integer;
   H, Height : Integer;
+
+ {$IF CompilerVersion < 22.0}
   png: TPNGObject;
+ {$ifend}
+ {$IF CompilerVersion >= 22.0}
+  png: TPngImage;
+ {$ifend}
+
+//  png: TPNGObject;
   pb: PByteArray;
-  ResStream : TResourceStream;      // used for loading from resource
+//  ResStream : TResourceStream;      // used for loading from resource
 begin
+
+  {$IF CompilerVersion < 22.0}
   png := TPNGObject.Create;
+ {$ifend}
+ {$IF CompilerVersion >= 22.0}
+  png := TPngImage.Create;
+ {$ifend}
+
+//  png := TPNGObject.Create;
   png.LoadFromFile(FileName);
   Width :=png.Width;
   Height :=png.Height;
@@ -1143,29 +1166,29 @@ function TGLEngine.LoadImage(Filename: String; var Texture: Cardinal;
 var
  ImageType:string;
 begin
-
+ Result:=false;
  if not LoadFromRes then
  begin
   if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.BMP' then
-      LoadBMPTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadBMPTexture(Filename, Texture, LoadFromRes);
     if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.JPG' then
-      LoadJPGTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadJPGTexture(Filename, Texture, LoadFromRes);
     if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.TGA' then
-      LoadTGATexture(Filename, Texture, LoadFromRes);
+      Result:=LoadTGATexture(Filename, Texture, LoadFromRes);
     if copy(Uppercase(Filename), Length(Filename) - 3, 4) = '.PNG' then
-      LoadPNGTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadPNGTexture(Filename, Texture, LoadFromRes);
   End
   else
   begin
      ImageType:=copy(Uppercase(Filename), 1, 3);
     if ImageType = 'BMP' then
-      LoadBMPTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadBMPTexture(Filename, Texture, LoadFromRes);
     if ImageType ='JPG' then
-      LoadJPGTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadJPGTexture(Filename, Texture, LoadFromRes);
     if ImageType = 'TGA' then
-      LoadTGATexture(Filename, Texture, LoadFromRes);
+      Result:=LoadTGATexture(Filename, Texture, LoadFromRes);
     if ImageType = 'PNG' then
-      LoadPNGTexture(Filename, Texture, LoadFromRes);
+      Result:=LoadPNGTexture(Filename, Texture, LoadFromRes);
   end;
 
 end;
@@ -1730,13 +1753,20 @@ var
   H, Height : Integer;
   C : LongWord;
   Line : ^LongWord;
+  TempBMP:TBitMap;
 begin
- Width :=BMP.Width;
- Height :=BMP.Height;
+ // Create Bitmap
+ TempBMP:=TBitmap.Create;
+ TempBMP.pixelformat:=pf32bit;
+ TempBMP.width:=bmp.width;
+ TempBMP.height:=bmp.height;
+ TempBMP.canvas.draw(0,0,bmp);
+ Width :=TempBMP.Width;
+ Height :=TempBMP.Height;
  SetLength(Data, Width*Height);
  For H:=0 to Height-1 do
   Begin
-   Line :=BMP.scanline[Height-H-1];
+   Line :=TempBMP.scanline[Height-H-1];
    For W:=0 to Width-1 do
     Begin
      c:=Line^ and $FFFFFF; // Need to do a color swap
@@ -1745,6 +1775,7 @@ begin
     End;
   End;
  Texture :=CreateTexture(Width, Height, GL_RGBA, addr(Data[0]));
+ TempBMP.Free;
 end;
 
 function TGLEngine.GetFPS: integer;
@@ -1767,7 +1798,6 @@ end;
 Function BitMapInfoHeaderTo_BMP ( Header:PBITMAPINFOHEADER;lpbi:pointer ):tBitmap;
 VAR
  hBmp        : HBITMAP;
- lpbiWanted  : pBitmapInfoHeader;
  dc          : HDC;
  bits        : pChar;
  bmp          : TBitmap;
@@ -1831,7 +1861,6 @@ var
   H, Height : Integer;
   png: TPNGObject;
   pb: PByteArray;
-  ResStream : TResourceStream;      // used for loading from resource
 begin
   glBindTexture(GL_TEXTURE_2D, im);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, @Width);
@@ -2066,6 +2095,7 @@ var
   VShaderText: String;
   VShaderLength: Integer;
 begin
+ Result:=-1;
  if FileExists(FragmentShaderFileName) then
   if FileExists(VertexShaderFileName) then
    begin
@@ -2246,7 +2276,7 @@ begin
  gluTessCallback( tobj, GLU_TESS_VERTEX, @myVertex );
  gluTessCallback( tobj, GLU_TESS_END, nil );
 
-   gluTessBeginPolygon(tobj, 0);
+   gluTessBeginPolygon(tobj, nil);
       gluTessBeginContour(tobj);
 
       For i:=0 to High( inVertexArray )  do
@@ -2377,30 +2407,12 @@ var
   RawLength: LongWord;
   pData : Pointer;
   CreateTextureParams: TCreateTextureParams;
-  // used for loading from resource
-  ResStream : TResourceStream;
 begin
+  result :=false;
   if LoadFromResource then // Load from resource
   begin
-    try
-      ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), 'GL');
-      //RawLength := StreamSize(RAWFile) - SizeOf(CreateTextureParams);
-      GetMem(pData, RAWLength);
-      ResStream.ReadBuffer(pData^, RawLength);            // RAW Data
-      ResStream.ReadBuffer(CreateTextureParams, SizeOf(CreateTextureParams));  // FileHeader
-      ResStream.Free;
-    except on
-      EResNotFound do
-      begin
-        MessageBox(0, PChar('File not found in resource - ' + Filename), PChar('GL Texture'), MB_OK);
-        Exit;
-      end
-      else
-      begin
-        MessageBox(0, PChar('Unable to read from resource - ' + Filename), PChar('GL Unit'), MB_OK);
-        Exit;
-      end;
-    end;
+   MessageBox(0, PChar('Load from resource not supported - ' + Filename), PChar('GL Texture'), MB_OK);
+   Exit;
   end
   else
   begin
