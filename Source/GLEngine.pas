@@ -159,6 +159,14 @@ Type
   {+}Procedure BarGrad(x1,y1,x2,y2,x3,y3,x4,y4:single;c1,c2,c3,c4:TGLColor); Overload;
 
   {+}Procedure Ellipse(x,y,r1,r2,whidth,AngleRotate:single;n:integer);
+
+///   <summary>
+///   <para>Draw Ellipse</para>
+///   <para>Рисует эллипс с центром в точке (x,y) и радиусами r1 и r2,
+///    количеством сегментов - Quality. Fill - определяет нужно ли заливать цветом</para>
+///   </summary>
+     Procedure Ellipse2(x,y,r1,r2,AngleRotate:single;Quality:integer;Fill:boolean);
+
      Procedure Polygon(x,y,AngleRotate,TextureAngleRotate:single; n: array of TGLPoint);
      procedure PolygonTexture(x,y,AngleRotate,TexAngle:single;Trans, Scale: TGLPoint; vertex,tex: array of TGLPoint; image:Cardinal);
      procedure PolygonTess( x, y, AngleRotate: single; n: array of TGLPoint ); // Спасибо cain
@@ -987,8 +995,8 @@ else
   end
   else
   begin
-   glTexCoord2f(0, 0);   glVertex3f(0, 0, 0);
-   glTexCoord2f(dx,0);   glVertex3f(pWidth, 0, 0);
+   glTexCoord2f(0, 0);  glVertex3f(0, 0, 0);
+   glTexCoord2f(dx,0);  glVertex3f(pWidth, 0, 0);
    glTexCoord2f(dx,dy); glVertex3f(pWidth, pHeight, 0);
    glTexCoord2f(0, dy); glVertex3f(0,pHeight, 0);
   end;
@@ -1099,6 +1107,34 @@ begin
  quadDisc:= gluNewQuadric();
  gluDisk(quadDisc, 1-whidth, 1, n, n);
  gluDeleteQuadric(quadDisc);
+ glPopMatrix();
+end;
+
+procedure TGLEngine.Ellipse2(x,y,r1,r2,AngleRotate:single;Quality:integer;Fill:boolean);
+  var
+    i : Integer;
+    k : Single;
+begin
+  Quality:=Quality;
+  if Quality > 360 Then
+    k := 360
+  else
+    k := 360 / Quality;
+ glPushMatrix();
+  glRotatef(AngleRotate, 0,0,1);
+  glTranslated(x,y,0);
+
+  if Fill then
+   glBegin(GL_TRIANGLE_FAN)
+  else
+   glBegin(GL_LINES);
+
+    for i := 0 to Quality-1  do
+      begin
+        glVertex2f( r1 * cos(  i * k * (pi / 180)), r2 * sin(  i * k * (pi / 180)) );
+        glVertex2f( r1 * cos(  ( i + 1 ) * k * (pi / 180)  ), r2 * sin(  ( i + 1 ) * k * (pi / 180))  );
+      end;
+  glEnd();
  glPopMatrix();
 end;
 
@@ -1315,12 +1351,13 @@ begin
 
 //  glTranslatef(x, y, 0.0);
  //  glRotatef(Angle, 0,0,1);
-//  glScalef (15.0, -15.0, 1.0);                      // Uloћн souиasnэ stav display listщ
+//  glScalef (15.0, -15.0, 1.0);
 ////////////////////////
  //  glPixelZoom(1,10);
 //  glTranslatef (10,-1,1);
+
   glListBase(FontHandle);
-  glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text)); // Vykreslн display listy
+  glCallLists(length(text),GL_UNSIGNED_BYTE,Pchar(text));
   glPopMatrix();
   glPopAttrib;
 end;
@@ -2006,7 +2043,8 @@ begin
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
-  glOrtho (0, w, 0, h, -100,100 );
+  glOrtho (0, w, h, 0, -100,100 );
+
   glMatrixMode(GL_MODELVIEW);
 
   glEnable(GL_TEXTURE_2D);

@@ -3,7 +3,7 @@ unit Unit1;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Windows, Messages, SysUtils, Variants, Classes, VCL.Graphics, Controls, Forms,
   Dialogs,GlEngine, StdCtrls, ExtCtrls;
 
 type
@@ -25,20 +25,25 @@ type
 var
   Form1: TForm1;
   GLE:TGLEngine=nil;
-  Im1:cardinal;
+  Im1,im2:cardinal;
   d,dx:real;
 implementation
 
 {$R *.dfm}
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+ bmp:TBitMap;
 begin
+ bmp:=TBitMap.create;
+ bmp.LoadFromFile(ExtractFilePath(Application.ExeName)+'02.bmp');
  GLE:=TGLEngine.Create;
  GLE.VisualInit(GetDC(Panel1.Handle),Panel1.ClientWidth,Panel1.ClientHeight,2);
 
  // в наименовании ресурса первые три буквы должны отображать тип файла:  BMP JPG TGA PNG
  GLE.LoadImage('JpgImage_1',Im1,true);
-
+ GLE.AddBMPImage(bmp,im2);
+ bmp.free;
  d:=0; dx:=1;
 end;
 
@@ -54,6 +59,7 @@ begin
  GLE.AntiAlias(true);
  gle.SetColor(1,1,1,1);
  Gle.DrawImage(d,0,100,50,0,false,false,Im1);
+ Gle.DrawImage(0,d,100,50,0,false,false,Im2);
 
  GLE.FinishRender;
  Form1.Caption:='FPS - '+FloatToStr(GLE.GetFPS);

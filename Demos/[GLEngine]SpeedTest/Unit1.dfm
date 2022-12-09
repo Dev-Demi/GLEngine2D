@@ -1,19 +1,17 @@
 object Form1: TForm1
   Left = 378
   Top = 277
-  Width = 463
-  Height = 469
   Caption = 'SpeedTest'
+  ClientHeight = 431
+  ClientWidth = 451
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
-  OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
     Left = 8
@@ -95,29 +93,29 @@ object Form1: TForm1
     TabOrder = 4
   end
   object Button3: TButton
-    Left = 56
-    Top = 392
-    Width = 169
+    Left = 0
+    Top = 398
+    Width = 113
     Height = 25
     Caption = 'DrawImage'
     TabOrder = 5
     OnClick = Button3Click
   end
   object Button4: TButton
-    Left = 240
-    Top = 392
-    Width = 169
+    Left = 123
+    Top = 398
+    Width = 102
     Height = 25
     Caption = 'DrawCurrentImage'
     TabOrder = 6
     OnClick = Button4Click
   end
   object Button5: TButton
-    Left = 48
-    Top = 360
-    Width = 75
+    Left = 231
+    Top = 398
+    Width = 129
     Height = 25
-    Caption = 'Button5'
+    Caption = 'DrawCurrentImage2'
     TabOrder = 7
     OnClick = Button5Click
   end

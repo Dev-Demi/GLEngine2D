@@ -39,7 +39,8 @@ var
   QW:int64;
   TimeDraw,ClockRate:double;
   StartDrawTime,EndDrawTime:Int64;
-  Im1,im2:cardinal;
+  Im1, im2: cardinal;
+
 implementation
 
 {$R *.dfm}
@@ -49,7 +50,7 @@ begin
  GLE:=TGLEngine.Create;
  GLE.VisualInit(GetDC(Panel2.Handle),Panel2.ClientWidth,Panel2.ClientHeight,0);
  GLE.LoadImage(ExtractFilePath(Application.ExeName)+'b.png',Im1,false);
- GLE.LoadImage(ExtractFilePath(Application.ExeName)+'z.tga',Im2,false);
+ GLE.LoadImage(ExtractFilePath(Application.ExeName)+'p.png',Im2,false);
  QueryPerformanceFrequency(QW);
  ClockRate:=qw;
 
@@ -73,7 +74,8 @@ begin
      end;
    2:begin
       gle.SetColor(random,random,random,1);
-      gle.Ellipse(random(200),random(200),random(50),random(50),1,0,16);
+   //   gle.Ellipse(random(200),random(200),random(50),random(50),1,0,16);
+      gle.Ellipse2(random(200),random(200),random(50),random(50),0,16,true);
      end;
    3:begin
       gle.SetColor(random,random,random,1);
@@ -126,23 +128,27 @@ procedure TForm1.Button3Click(Sender: TObject);
 var
  i:integer;
 begin
+ QueryPerformanceCounter(StartDrawTime);
  gle.BeginRender(true);
  for i:=1 to SpinEdit1.Value do
  begin
-  gle.DrawImage(random(200),random(200),random(200),random(200),0,true,false,im1);
+  gle.DrawImage(random(200),random(200),random(200),random(200),0,true,false,im2);
 //  gle.DrawImage(random(200),random(200),random(200),random(200),0,true,false,im2);
  end;
  gle.FinishRender;
- Label2.Caption:='TGLEngine - '+FloatToStrF(gle.GetTimeDrawFrame,ffFixed,5,3)+' мс';
+  QueryPerformanceCounter(EndDrawTime);
+ TimeDraw:=1000.0 * (EndDrawTime - StartDrawTime) / ClockRate;
+ Label1.Caption:='TCanvas - '+FloatToStrF(TimeDraw,ffFixed,5,3)+' мс';
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
 var
  i:integer;
 begin
+ QueryPerformanceCounter(StartDrawTime);
  gle.BeginRender(true);
 
- gle.SetCurrentImage(im1);
+ gle.SetCurrentImage(im2);
  for i:=1 to SpinEdit1.Value do
  begin
   gle.DrawCurrentImage(random(200),random(200),random(200),random(200),0,true,false);
@@ -156,25 +162,31 @@ begin
  gle.SetCurrentImage(0);
 
  gle.FinishRender;
- Label2.Caption:='TGLEngine - '+FloatToStrF(gle.GetTimeDrawFrame,ffFixed,5,3)+' мс';
+  QueryPerformanceCounter(EndDrawTime);
+ TimeDraw:=1000.0 * (EndDrawTime - StartDrawTime) / ClockRate;
+ Label1.Caption:='TCanvas - '+FloatToStrF(TimeDraw,ffFixed,5,3)+' мс';
 end;
 
 procedure TForm1.Button5Click(Sender: TObject);
  var
  i:integer;
 begin
+ QueryPerformanceCounter(StartDrawTime);
  gle.BeginRender(true);
 
- gle.SetCurrentImage(im1);
+ gle.SetCurrentImage(im2);
  for i:=1 to SpinEdit1.Value do
  begin
   gle.DrawCurrentImage2(random(200),random(200),random(200),random(200),0,true,false);
  end;
 
-// gle.SetCurrentImage(0);
+
 
  gle.FinishRender;
- Label2.Caption:='TGLEngine - '+FloatToStrF(gle.GetTimeDrawFrame,ffFixed,5,3)+' мс';
+ gle.SetCurrentImage(0);
+  QueryPerformanceCounter(EndDrawTime);
+ TimeDraw:=1000.0 * (EndDrawTime - StartDrawTime) / ClockRate;
+ Label1.Caption:='TCanvas - '+FloatToStrF(TimeDraw,ffFixed,5,3)+' мс';
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);

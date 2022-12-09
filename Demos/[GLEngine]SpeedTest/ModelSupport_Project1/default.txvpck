@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nodeSet version="1.0">
+  <view uin="rcu70h321fxzk83l_v">
+    <property name="$defaultDiagram" value="true" />
+    <property name="$metaclass" value="Package Diagram" />
+    <property name="$name" value="default" />
+    <reference referencedUin="design:view:::v902qo4qp7feszz3q_v">
+      <property name="$shortcutReference" value="true" />
+      <property name="bounds" value="10,10,101,134" />
+      <reference referencedUin="delphi:e_class:src:Project1:Project1.@unitclass" />
+    </reference>
+    <reference referencedUin="design:view:::oc0g26wovbfppc48q_v">
+      <property name="$shortcutReference" value="true" />
+      <property name="bounds" value="130,1,100,151" />
+      <reference referencedUin="delphi:e_class:src:Project1:Unit1.TForm1" />
+      <reference referencedUin="delphi:e_class:src:Project1:Unit1.@unitclass" />
+    </reference>
+  </view>
+</nodeSet>
