@@ -327,7 +327,9 @@ begin
   if LoadFromResource then // Load from resource
   begin
     try
-      ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), 'BMP');
+
+//      ResStream := TResourceStream.Create(hInstance, PChar(copy(Filename, 1, Pos('.', Filename)-1)), 'BMP');
+      ResStream := TResourceStream.Create(hInstance, PChar(Filename), RT_RCDATA);
       ResStream.ReadBuffer(FileHeader, SizeOf(FileHeader));  // FileHeader
       ResStream.ReadBuffer(InfoHeader, SizeOf(InfoHeader));  // InfoHeader
       PaletteLength := InfoHeader.biClrUsed;
@@ -1123,7 +1125,6 @@ begin
  glPushMatrix();
   glRotatef(AngleRotate, 0,0,1);
   glTranslated(x,y,0);
-
   if Fill then
    glBegin(GL_TRIANGLE_FAN)
   else
