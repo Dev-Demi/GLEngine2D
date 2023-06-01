@@ -461,7 +461,10 @@ begin
  {$ifend}
 
 //  png := TPNGObject.Create;
-  png.LoadFromFile(FileName);
+  if LoadFromResource then
+   png.LoadFromResourceName(HInstance,Filename)
+  else
+   png.LoadFromFile(FileName);
   Width :=png.Width;
   Height :=png.Height;
   if png.Palette<>0 then
