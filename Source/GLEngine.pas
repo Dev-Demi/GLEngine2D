@@ -2047,7 +2047,7 @@ begin
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
-  glOrtho (0, w, h, 0, -100,100 );
+  glOrtho (0, w, 0, h, -100,100 );
 
   glMatrixMode(GL_MODELVIEW);
 
